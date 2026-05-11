@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hardening de Servidores Linux: Mejores Prácticas | Caprietoj.com</title>
-    <meta name="description" content="Aprende a proteger tus servidores Linux con las mejores prácticas de hardening. SSH seguro, firewall UFW, fail2ban y más.">
+    <meta name="description" content="Aprende a proteger tus servidores Linux con las mejores prácticas de hardening. SSH seguro, firewall UFW, fail2ban, CIS benchmarks, Lynis, auditd, AIDE y más.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
     <style>
@@ -101,7 +101,7 @@
             <h1 class="article-title">Hardening de Servidores Linux: Mejores Prácticas</h1>
             <div class="article-meta">
                 <span>📅 Mayo 2024</span>
-                <span>⏱️ 12 min lectura</span>
+                <span>⏱️ 25 min lectura</span>
             </div>
         </div>
     </header>
@@ -115,55 +115,1103 @@
         
         <div class="article-content">
             <h2>Introducción</h2>
-            <p>Cada día se reportan miles de ataques a servidores Linux. Los atacantes buscan sistemas mal configurados, contraseñas débiles y servicios expuestos. En esta guía aprenderás a proteger tus servidores Linux como un profesional con años de experiencia en infraestructura IT.</p>
+            <p>Cada día se reportan miles de ataques a servidores Linux. Los atacantes buscan sistemas mal configurados, contraseñas débiles y servicios expuestos. En esta guía aprenderás a proteger tus servidores Linux como un profesional con años de experiencia en infraestructura IT. Abordaremos desde la configuración básica hasta técnicas avanzadas de hardening utilizadas en entornos de producción reales, incluyendo benchmarks CIS, auditoría con Lynis, monitoreo de integridad con AIDE y automatización completa con Ansible.</p>
+
+            <p>Esta guía está basada en Ubuntu 22.04 LTS, pero los conceptos y herramientas son aplicables a cualquier distribución Linux. He organizado el contenido en módulos independientes para que puedas implementarlos gradualmente según las necesidades de tu infraestructura.</p>
 
             <h2>¿Qué es el Hardening?</h2>
-            <p>Hardening es el proceso de asegurar un sistema reduciendo su superficie de ataque. Cada servicio, puerto y configuración que no es estrictamente necesario representa un riesgo potencial.</p>
+            <p>Hardening es el proceso de asegurar un sistema reduciendo su superficie de ataque. Cada servicio, puerto, usuario y configuración que no es estrictamente necesario representa un riesgo potencial. El objetivo no es solo aplicar parches de seguridad, sino construir una arquitectura defensiva por capas que haga económicamente inviable para un atacante comprometer el sistema.</p>
 
-            <h2>Paso a Paso: Hardening de un Servidor Ubuntu</h2>
-            
-            <h3>1. Actualización Inicial</h3>
-            <p>Antes de cualquier configuración, actualiza todos los paquetes:</p>
-            <pre><code>sudo apt update && sudo apt upgrade -y
-sudo apt install -y fail2ban ufw unattended-upgrades</code></pre>
+            <p>Un servidor hardening sigue el principio de mínimo privilegio: cada componente tiene exactamente los permisos que necesita para funcionar y nada más. Esto aplica a usuarios, procesos, servicios de red y configuraciones del kernel.</p>
 
-            <h3>2. Configuración de SSH</h3>
-            <p>Edita <code>/etc/ssh/sshd_config</code>:</p>
-            <pre><code>Port 2222                    # Puerto no estándar
-PermitRootLogin no           # No login como root
-PasswordAuthentication no    # Solo llaves SSH
-MaxAuthTries 3              # Limitar intentos fallidos</code></pre>
+            <h2>CIS Benchmarks</h2>
+            <p>Los CIS (Center for Internet Security) Benchmarks son guías de configuración segura desarrolladas por consenso global de expertos en ciberseguridad. Constituyen el estándar de facto para el hardening de sistemas operativos, bases de datos, aplicaciones y servicios cloud. Cada benchmark contiene cientos de recomendaciones categorizadas por nivel de impacto y riesgo.</p>
 
-            <h3>3. Firewall con UFW</h3>
-            <pre><code>sudo ufw default deny incoming
-sudo ufw default allow outgoing
-sudo ufw allow 2222/tcp      # SSH
-sudo ufw allow 80/tcp        # HTTP
-sudo ufw allow 443/tcp       # HTTPS
-sudo ufw enable</code></pre>
+            <h3>Niveles CIS: Level 1 vs Level 2</h3>
+            <p><strong>CIS Level 1</strong> agrupa las recomendaciones esenciales que todo servidor debería implementar. Son configuraciones de bajo impacto operativo que reducen significativamente la superficie de ataque sin afectar la funcionalidad del sistema. Por ejemplo, deshabilitar el login root por SSH, establecer permisos correctos en archivos críticos o configurar el tiempo de bloqueo de sesiones inactivas.</p>
 
-            <h3>4. Protección con fail2ban</h3>
+            <p><strong>CIS Level 2</strong> contiene medidas más agresivas diseñadas para entornos de alta seguridad como datos financieros, salud o infraestructura crítica. Estas recomendaciones pueden requerir cambios profundos en la configuración del sistema y en ocasiones romper compatibilidad con aplicaciones antiguas. Por ejemplo, deshabilitar por completo la compilación de módulos del kernel en tiempo de ejecución, restringir el uso de sysctl o activar auditd para todas las llamadas al sistema.</p>
+
+            <h3>Cómo aplicar CIS Benchmarks</h3>
+            <p>El proceso recomendado comienza con la descarga del benchmark oficial desde <code>https://www.cisecurity.org/cis-benchmarks</code>. Para Ubuntu 22.04, el benchmark contiene aproximadamente 250 recomendaciones. Se recomienda usar herramientas como <strong>OpenSCAP</strong> para automatizar la evaluación:</p>
+
+            <pre><code># Instalar OpenSCAP
+sudo apt install -y libopenscap8 scap-security-guide
+
+# Evaluar el sistema contra el perfil CIS Level 1
+sudo oscap xccdf eval \
+  --profile xccdf_org.ssgproject.content_profile_cis_level1_server \
+  --results results.xml --report report.html \
+  /usr/share/xml/scap/ssg/content/ssg-ubuntu2204-ds.xml
+
+# Generar script de remediación
+sudo oscap xccdf generate fix \
+  --profile xccdf_org.ssgproject.content_profile_cis_level1_server \
+  --fix-type ansible results.xml -o remediation.yml</code></pre>
+
+            <p>El reporte HTML generado muestra en verde las configuraciones que cumplen, en rojo las que fallan y en gris las no evaluadas. La remediación puede aplicarse manualmente o mediante el playbook de Ansible generado.</p>
+
+            <h3>Ejemplo de recomendaciones CIS Level 1</h3>
+            <pre><code># 1.1.1.1 - Ensure mounting of cramfs filesystems is disabled
+install cramfs /bin/true
+
+# 5.1.1 - Ensure cron daemon is enabled and running
+systemctl enable --now cron
+
+# 5.2.1 - Ensure permissions on /etc/ssh/sshd_config are configured
+chown root:root /etc/ssh/sshd_config
+chmod 600 /etc/ssh/sshd_config
+
+# 5.4.1.1 - Ensure password expiration is 365 days or less
+sed -i 's/^PASS_MAX_DAYS.*/PASS_MAX_DAYS 90/' /etc/login.defs</code></pre>
+
+            <h3>Ejemplo de recomendaciones CIS Level 2</h3>
+            <pre><code># 1.5.1 - Ensure core dumps are restricted
+echo 'hard core 0' >> /etc/security/limits.conf
+echo 'fs.suid_dumpable = 0' >> /etc/sysctl.d/99-cis.conf
+
+# 3.1.2 - Ensure packet redirect sending is disabled
+sysctl -w net.ipv4.conf.all.send_redirects=0
+sysctl -w net.ipv4.conf.default.send_redirects=0
+
+# 4.2.1.5 - Ensure rsyslog is configured to send logs to a remote host
+echo '*.* @logs.example.com:514' >> /etc/rsyslog.conf
+
+# 6.2.1 - Ensure accounts in /etc/passwd use shadowed passwords
+pwck -r</code></pre>
+
+            <h2>Auditoría con Lynis</h2>
+            <p>Lynis es un auditor de seguridad de código abierto desarrollado por CISOfy. Escanea el sistema completo y genera un informe detallado con recomendaciones priorizadas. Es la herramienta ideal para auditorías periódicas y para verificar el cumplimiento de benchmarks como CIS o PCI-DSS.</p>
+
+            <h3>Instalación y ejecución</h3>
+            <pre><code># Instalación desde repositorio oficial
+sudo apt install -y lynis
+
+# O descargar la última versión
+wget -O - https://packages.cisofy.com/keys/cisofy-software-public.key | sudo apt-key add -
+echo "deb https://packages.cisofy.com/community/lynis/deb/ stable main" | sudo tee /etc/apt/sources.list.d/cisofy-lynis.list
+sudo apt update && sudo apt install -y lynis
+
+# Ejecutar auditoría completa
+sudo lynis audit system
+
+# Ejecutar solo categorías específicas
+sudo lynis audit system --tests-from-group malware,authentication,networking</code></pre>
+
+            <h3>Interpretar los resultados</h3>
+            <p>Al finalizar, Lynis muestra un resumen con el <strong>Hardening Index</strong>, un valor numérico de 0 a 100 que indica el nivel de seguridad del sistema. También presenta una lista de sugerencias numeradas como <code>Suggestion</code> y <code>Warning</code>. Cada sugerencia incluye una explicación y el comando necesario para resolverla.</p>
+
+            <pre><code>=============================================================
+  Lynis 3.1.1
+=============================================================
+  Hardening index : 68 [############       ]
+  Tests performed : 267
+  Suggestions    : 34
+  Warnings       : 2
+
+  How to increase this number:
+  - Follow suggestions and warnings from the scan
+  - Check https://cisofy.com/lynis/ for additional guidance
+
+  💡 Tip: Schedule Lynis scans via cron for continuous auditing</code></pre>
+
+            <h3>Automatizar auditorías con Lynis</h3>
+            <p>Para mantener un monitoreo continuo, programa Lynis vía cron y envía los reportes por correo o a un SIEM:</p>
+
+            <pre><code>#!/bin/bash
+# /usr/local/bin/lynis-audit.sh
+LOGDIR="/var/log/lynis"
+DATE=$(date +%Y%m%d-%H%M)
+mkdir -p "$LOGDIR"
+
+lynis audit system --quiet --logfile "$LOGDIR/lynis-$DATE.log"
+
+# Extraer hardening index
+INDEX=$(grep "Hardening index" "$LOGDIR/lynis-$DATE.log" | awk '{print $NF}')
+echo "[$DATE] Hardening Index: $INDEX" >> "$LOGDIR/history.txt"
+
+# Si el índice baja de 60, enviar alerta
+if [ "$INDEX" -lt 60 ]; then
+    mail -s "ALERTA: Hardening Index bajó a $INDEX en $(hostname)" \
+         admin@example.com < "$LOGDIR/lynis-$DATE.log"
+fi</code></pre>
+
+            <pre><code># Programar en cron: ejecución semanal
+0 6 * * 1 root /usr/local/bin/lynis-audit.sh</code></pre>
+
+            <h2>Configuración de auditd</h2>
+            <p>auditd es el subsistema de auditoría del kernel de Linux. Permite registrar eventos de seguridad a nivel de sistema operativo, incluyendo accesos a archivos, ejecución de comandos, cambios de permisos y conexiones de red. Es el componente que genera la evidencia forense cuando ocurre un incidente.</p>
+
+            <h3>Instalación y reglas básicas</h3>
+            <pre><code>sudo apt install -y auditd audispd-plugins
+sudo systemctl enable --now auditd</code></pre>
+
+            <p>Las reglas se definen en <code>/etc/audit/rules.d/audit.rules</code>. Aquí tienes un conjunto completo de reglas para un servidor de producción:</p>
+
+            <pre><code># /etc/audit/rules.d/audit.rules
+
+# Eliminar reglas existentes
+-D
+
+# Buffer size (ajustar según RAM disponible)
+-b 8192
+
+# Frecuencia de fail y acción
+-f 1
+--backlog_wait_time 60000
+
+# Monitoreo de archivos críticos del sistema
+-w /etc/passwd -p wa -k identity
+-w /etc/shadow -p wa -k identity
+-w /etc/group -p wa -k identity
+-w /etc/gshadow -p wa -k identity
+-w /etc/sudoers -p wa -k sudoers
+-w /etc/sudoers.d/ -p wa -k sudoers
+
+# Monitoreo de configuración SSH
+-w /etc/ssh/sshd_config -p wa -k sshd_config
+
+# Monitoreo de binarios críticos
+-w /usr/bin/passwd -p x -k passwd_modification
+-w /usr/bin/su -p x -k su_exec
+-w /usr/bin/sudo -p x -k sudo_exec
+-w /usr/bin/ssh -p x -k ssh_exec
+
+# Monitoreo del directorio de log
+-w /var/log/auth.log -p wa -k authlog
+-w /var/log/syslog -p wa -k syslog
+
+# Monitoreo de cambios en la configuración de red
+-w /etc/network/ -p wa -k network
+-w /etc/hosts -p wa -k hosts
+-w /etc/hostname -p wa -k hostname
+
+# Monitoreo del directorio de cron
+-w /etc/cron.d/ -p wa -k cron
+-w /etc/crontab -p wa -k cron
+-w /etc/cron.daily/ -p wa -k cron
+-w /etc/cron.hourly/ -p wa -k cron
+
+# Registrar todas las llamadas al sistema de mount
+-a always,exit -F arch=b64 -S mount -S umount2 -k mounts
+-a always,exit -F arch=b32 -S mount -S umount2 -k mounts
+
+# Registrar cambios de tiempo
+-a always,exit -F arch=b64 -S adjtimex -S settimeofday -S clock_settime -k time-change
+-a always,exit -F arch=b32 -S adjtimex -S settimeofday -S clock_settime -k time-change</code></pre>
+
+            <h3>Gestión de logs de auditoría</h3>
+            <p>auditd genera logs en <code>/var/log/audit/audit.log</code>. Para consultarlos de forma eficiente:</p>
+
+            <pre><code># Buscar eventos de autenticación
+sudo ausearch -m USER_LOGIN --success yes -i
+
+# Buscar accesos a /etc/shadow
+sudo ausearch -k identity -i
+
+# Buscar ejecuciones de sudo
+sudo ausearch -k sudo_exec -i
+
+# Reporte resumido por tipo de evento
+sudo aureport -m
+
+# Reporte de inicios de sesión
+sudo aureport -l -i
+
+# Monitoreo en tiempo real
+sudo tail -f /var/log/audit/audit.log | audit2why</code></pre>
+
+            <p>Para evitar que los logs de auditoría saturen el disco, configura la rotación en <code>/etc/audit/auditd.conf</code>:</p>
+
+            <pre><code>max_log_file = 100
+max_log_file_perms = 'go-rwx'
+num_logs = 5
+space_left_action = SYSLOG
+action_mail_acct = root
+admin_space_left_action = HALT
+disk_full_action = SUSPEND</code></pre>
+
+            <h2>Automount y eliminación de servicios innecesarios</h2>
+            <p>Cada servicio corriendo en un servidor es una potencial puerta de entrada. La regla de oro es: <strong>si no lo necesitas, desinstálalo</strong>. Si no puedes desinstalarlo, al menos deshabilítalo y elimínalo del inicio automático.</p>
+
+            <h3>Identificar servicios activos</h3>
+            <pre><code># Listar todos los servicios y su estado
+systemctl list-units --type=service --state=running
+
+# Ver servicios habilitados al arranque
+systemctl list-unit-files --type=service --state=enabled
+
+# Escuchar puertos abiertos y servicios asociados
+ss -tulpn
+netstat -tulpn
+
+# Identificar procesos que escuchan en red
+lsof -i -P -n | grep LISTEN</code></pre>
+
+            <h3>Deshabilitar servicios innecesarios</h3>
+            <pre><code># Detener y deshabilitar un servicio
+sudo systemctl stop whoopsie
+sudo systemctl disable whoopsie
+
+# Enmascarar para evitar que otro proceso lo reactive
+sudo systemctl mask whoopsie
+
+# Desinstalar por completo
+sudo apt purge -y whoopsie avahi-daemon cups bluetooth</code></pre>
+
+            <h3>Servicios comunes que deberías revisar</h3>
+            <ul>
+                <li><strong>avahi-daemon</strong>: Zeroconf/mDNS, innecesario en servidores</li>
+                <li><strong>cups</strong>: Servicio de impresión, raro en un servidor web</li>
+                <li><strong>bluetooth</strong>: Obvio, pero a veces viene activo</li>
+                <li><strong>whoopsie</strong>: Reporte de errores de Ubuntu, solo para desktop</li>
+                <li><strong>ModemManager</strong>: Gestión de módems 3G/4G</li>
+                <li><strong>postfix</strong>: Si no es un servidor de correo, desinstálalo o configúralo para solo localhost</li>
+                <li><strong>rpcbind</strong>: Necesario solo si usas NFS</li>
+            </ul>
+
+            <h3>Automount y dispositivos extraíbles</h3>
+            <p>Deshabilitar el automontaje de dispositivos USB y medios extraíbles es una medida CIS Level 1 que previene ataques de tipo BadUSB:</p>
+
+            <pre><code># Deshabilitar el módulo USB storage
+echo "blacklist usb-storage" | sudo tee /etc/modprobe.d/disable-usb-storage.conf
+
+# Para un control más fino con udev
+echo 'SUBSYSTEM=="usb", ATTR{authorized}="0"' | sudo tee /etc/udev/rules.d/10-disable-usb.rules
+
+# Deshabilitar automontaje en GNOME/KDE (si aplica)
+sudo apt purge -y udisks2
+
+# Alternativa: deshabilitar servicio de automontaje
+sudo systemctl mask autofs</code></pre>
+
+            <p>Nota importante: no deshabilites usb-storage si tu servidor usa llaves de hardware YubiKey o dispositivos de almacenamiento USB para backups. En ese caso, audita qué dispositivos USB específicos autorizar mediante reglas udev personalizadas.</p>
+
+            <h2>Protección contra malware en Linux</h2>
+            <p>Aunque Linux es inherentemente más resistente al malware que otros sistemas operativos, no es inmune. Rootkits, mineros de criptomonedas y webshells son amenazas reales. Aquí tienes las herramientas esenciales para la detección.</p>
+
+            <h3>ClamAV: Antivirus para servidores</h3>
+            <p>ClamAV es un antivirus de código abierto fundamental para servidores de archivos, correo y web. Detecta malware, worms y virus diseñados originalmente para Windows que podrían afectar a los usuarios que descargan archivos de tu servidor.</p>
+
+            <pre><code># Instalación
+sudo apt install -y clamav clamav-daemon
+
+# Actualizar base de firmas
+sudo systemctl stop clamav-freshclam
+sudo freshclam
+sudo systemctl start clamav-freshclam
+
+# Escaneo de directorios críticos
+sudo clamscan -r --bell --infected /etc /var/www /home
+sudo clamscan -r --remove --quiet /var/www/uploads
+
+# Escaneo completo (programar en horario de baja actividad)
+sudo clamscan -r / --exclude-dir=/proc --exclude-dir=/sys \
+  --exclude-dir=/dev --max-filesize=100M --max-recursion=20 \
+  -l /var/log/clamav/scan-$(date +%Y%m%d).log
+
+# Análisis con ClamAV daemon para mejor rendimiento
+clamdscan --multiscan --fdpass /var/www</code></pre>
+
+            <h3>rkhunter: Rootkit Hunter</h3>
+            <p>rkhunter analiza el sistema en busca de rootkits conocidos, binarios modificados y módulos del kernel sospechosos:</p>
+
+            <pre><code># Instalación
+sudo apt install -y rkhunter
+
+# Actualizar bases de datos
+sudo rkhunter --update
+sudo rkhunter --propupd
+
+# Ejecutar chequeo completo
+sudo rkhunter --check --skip-keypress --report-warnings-only
+
+# Generar reporte detallado
+sudo rkhunter --check --rwo --summary-only
+cat /var/log/rkhunter.log | grep -i warning</code></pre>
+
+            <p>Configuración recomendada en <code>/etc/rkhunter.conf</code>:</p>
+
+            <pre><code>ALLOW_SSH_ROOT_USER=no
+ALLOW_SYSLOG_REMOTE_LOGGING=yes
+SUSPECT_DIRS="/dev /tmp /var/tmp /var/www /home"
+PHALANX2_DIRTEST=1
+ALLOWHIDDENDIR=""
+DISABLE_UNHIDE=no
+SCRIPTWHITELIST="/usr/sbin/groupadd /usr/sbin/useradd /usr/sbin/usermod"</code></pre>
+
+            <h3>chkrootkit</h3>
+            <p>chkrootkit es una herramienta complementaria que verifica señales específicas de rootkits conocidos mediante la inspección de binarios del sistema y sus firmas:</p>
+
+            <pre><code># Instalación y ejecución
+sudo apt install -y chkrootkit
+sudo chkrootkit
+
+# Solo verificar rootkits conocidos (más rápido)
+sudo chkrootkit -q -n
+
+# Si encuentras algo sospechoso, investiga más a fondo
+# chkrootkit -x (modo experto)</code></pre>
+
+            <p>Mi recomendación es usar ambas herramientas: rkhunter para monitoreo continuo programado (diario) y chkrootkit como segunda opinión cuando se detectan anomalías.</p>
+
+            <h3>Script de escaneo automatizado</h3>
+            <pre><code>#!/bin/bash
+# /usr/local/bin/malware-scan.sh
+LOG="/var/log/malware-scan.log"
+DATE=$(date)
+
+echo "=== Escaneo de malware: $DATE ===" >> "$LOG"
+
+# rkhunter
+rkhunter --check --skip-keypress --rwo >> "$LOG" 2>&1
+
+# chkrootkit
+chkrootkit -q -n >> "$LOG" 2>&1
+
+# ClamAV
+clamscan -r /var/www /home --quiet --infected >> "$LOG" 2>&1
+
+# Alertar si hay detecciones
+if grep -qi "infected\|warning\|found" "$LOG"; then
+    mail -s "ALERTA: Malware detectado en $(hostname)" \
+         admin@example.com < "$LOG"
+fi
+
+echo "=== Fin del escaneo ===" >> "$LOG"</code></pre>
+
+            <h2>Automatización del hardening con Ansible</h2>
+            <p>El hardening manual es propenso a errores y difícil de mantener en múltiples servidores. Ansible permite definir la configuración de seguridad como código, garantizando que todos los servidores cumplan con las mismas políticas y facilitando auditorías.</p>
+
+            <p>A continuación presento un playbook completo de hardening que implementa las medidas cubiertas en esta guía. Estructúralo en roles para mantenerlo modular y reutilizable.</p>
+
+            <h3>Estructura de directorios recomendada</h3>
+            <pre><code>ansible-hardening/
+├── playbook.yml
+├── inventory/
+│   └── production.yml
+├── group_vars/
+│   └── all.yml
+└── roles/
+    ├── ssh/
+    │   └── tasks/main.yml
+    ├── ufw/
+    │   └── tasks/main.yml
+    ├── fail2ban/
+    │   └── tasks/main.yml
+    ├── auditd/
+    │   └── tasks/main.yml
+    ├── lynis/
+    │   └── tasks/main.yml
+    └── sysctl/
+        └── tasks/main.yml</code></pre>
+
+            <h3>Playbook principal</h3>
+            <pre><code>---
+# playbook.yml - Hardening completo de servidores Linux
+- name: Hardening de servidor Linux
+  hosts: all
+  become: yes
+  vars_files:
+    - group_vars/all.yml
+
+  roles:
+    - sysctl
+    - ssh
+    - ufw
+    - fail2ban
+    - auditd
+    - lynis
+
+  post_tasks:
+    - name: Reiniciar servicios para aplicar cambios
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+        daemon_reload: yes
+      loop:
+        - sshd
+        - ufw
+        - fail2ban
+        - auditd</code></pre>
+
+            <h3>Rol: Configuración de SSH</h3>
+            <pre><code>---
+# roles/ssh/tasks/main.yml
+- name: Asegurar permisos del directorio SSH
+  file:
+    path: /etc/ssh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Configurar sshd hardening
+  template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+  notify: restart sshd
+
+- name: Asegurar que existan llaves de host válidas
+  command: ssh-keygen -A
+  args:
+    creates: /etc/ssh/ssh_host_rsa_key
+
+- name: Deshabilitar versiones antiguas de protocolo SSH
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Protocol'
+    line: 'Protocol 2'
+
+- name: Configurar límite de sesiones por usuario
+  lineinfile:
+    path: /etc/security/limits.conf
+    line: '*               hard    maxlogins     3'
+    create: yes</code></pre>
+
+            <p>Template SSH <code>roles/ssh/templates/sshd_config.j2</code>:</p>
+
+            <pre><code>Port {{ ssh_port }}
+Protocol 2
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+LoginGraceTime 60
+PermitRootLogin no
+MaxAuthTries 3
+MaxSessions 5
+
+PubkeyAuthentication yes
+PasswordAuthentication no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+
+X11Forwarding no
+PrintMotd no
+AcceptEnv LANG LC_*
+ClientAliveInterval 300
+ClientAliveCountMax 2
+
+AllowUsers {{ ssh_allowed_users | join(' ') }}
+
+# CIS Level 2
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com
+KexAlgorithms curve25519-sha256,diffie-hellman-group16-sha512</code></pre>
+
+            <h3>Rol: Firewall UFW</h3>
+            <pre><code>---
+# roles/ufw/tasks/main.yml
+- name: Establecer políticas por defecto
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+
+- name: Permitir puertos específicos
+  ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+  loop: "{{ ufw_allowed_ports }}"
+
+- name: Habilitar UFW
+  ufw:
+    state: enabled
+    logging: on
+
+- name: Verificar reglas aplicadas
+  command: ufw status numbered
+  register: ufw_status
+  changed_when: false
+
+- name: Mostrar estado del firewall
+  debug:
+    msg: "{{ ufw_status.stdout_lines }}"</code></pre>
+
+            <h3>Rol: fail2ban</h3>
+            <pre><code>---
+# roles/fail2ban/tasks/main.yml
+- name: Instalar fail2ban
+  apt:
+    name: fail2ban
+    state: present
+
+- name: Configurar fail2ban local
+  template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart fail2ban
+
+- name: Configurar filtro SSH personalizado
+  copy:
+    content: |
+      [Definition]
+      failregex = ^%(__prefix_line)s(?:error: )?\(port \d+\): Authentication failure for .* from <HOST>(?: port \d*)?\s*$
+      ignoreregex =
+    dest: /etc/fail2ban/filter.d/sshd-custom.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Habilitar fail2ban al inicio
+  systemd:
+    name: fail2ban
+    enabled: yes
+    state: started</code></pre>
+
+            <p>Template <code>roles/fail2ban/templates/jail.local.j2</code>:</p>
+
             <pre><code>[DEFAULT]
-bantime = 3600
-findtime = 600
-maxretry = 3
+bantime = {{ fail2ban_bantime }}
+findtime = {{ fail2ban_findtime }}
+maxretry = {{ fail2ban_maxretry }}
+banaction = ufw
 
 [sshd]
 enabled = true
-port = 2222</code></pre>
+port = {{ ssh_port }}
+logpath = %(sshd_log)s
+
+[sshd-ddos]
+enabled = true
+port = {{ ssh_port }}
+logpath = %(sshd_log)s
+
+[ufw]
+enabled = true
+logpath = /var/log/ufw.log
+
+[recidive]
+enabled = true
+logpath = /var/log/fail2ban.log
+bantime = 86400
+findtime = 86400
+maxretry = 5</code></pre>
+
+            <h3>Rol: auditd</h3>
+            <pre><code>---
+# roles/auditd/tasks/main.yml
+- name: Instalar auditd
+  apt:
+    name: auditd
+    state: present
+
+- name: Desplegar reglas de auditoría
+  copy:
+    src: audit.rules
+    dest: /etc/audit/rules.d/audit.rules
+    owner: root
+    group: root
+    mode: '0640'
+  notify: restart auditd
+
+- name: Configurar auditd.conf
+  lineinfile:
+    path: /etc/audit/auditd.conf
+    regexp: "^{{ item.key }}"
+    line: "{{ item.key }} = {{ item.value }}"
+  loop:
+    - { key: max_log_file, value: '100' }
+    - { key: num_logs, value: '5' }
+    - { key: space_left_action, value: SYSLOG }
+    - { key: admin_space_left_action, value: HALT }
+    - { key: disk_full_action, value: SUSPEND }
+
+- name: Asegurar rotación de logs de auditoría
+  copy:
+    content: |
+      /var/log/audit/*.log {
+        weekly
+        rotate 12
+        compress
+        delaycompress
+        missingok
+        notifempty
+        postrotate
+          /sbin/service auditd restart >/dev/null 2>&1 || true
+        endscript
+      }
+    dest: /etc/logrotate.d/auditd
+    owner: root
+    group: root
+    mode: '0644'</code></pre>
+
+            <h3>Variables del playbook</h3>
+            <pre><code>---
+# group_vars/all.yml
+ssh_port: 2222
+ssh_allowed_users:
+  - admin
+  - deploy
+
+ufw_allowed_ports:
+  - { rule: allow, port: '2222', proto: tcp }
+  - { rule: allow, port: '80', proto: tcp }
+  - { rule: allow, port: '443', proto: tcp }
+
+fail2ban_bantime: 3600
+fail2ban_findtime: 600
+fail2ban_maxretry: 3</code></pre>
+
+            <h3>Rol: sysctl (kernel hardening)</h3>
+            <pre><code>---
+# roles/sysctl/tasks/main.yml
+- name: Aplicar parámetros de hardening del kernel
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+    sysctl_set: yes
+  loop:
+    # Deshabilitar forwarding de IP
+    - { name: net.ipv4.ip_forward, value: '0' }
+    - { name: net.ipv6.conf.all.forwarding, value: '0' }
+    # Deshabilitar redirects ICMP
+    - { name: net.ipv4.conf.all.send_redirects, value: '0' }
+    - { name: net.ipv4.conf.default.send_redirects, value: '0' }
+    # Deshabilitar aceptación de redirects
+    - { name: net.ipv4.conf.all.accept_redirects, value: '0' }
+    - { name: net.ipv4.conf.default.accept_redirects, value: '0' }
+    - { name: net.ipv6.conf.all.accept_redirects, value: '0' }
+    # Protección contra spoofing
+    - { name: net.ipv4.conf.all.rp_filter, value: '1' }
+    - { name: net.ipv4.conf.default.rp_filter, value: '1' }
+    # Ignorar pings broadcast
+    - { name: net.ipv4.icmp_echo_ignore_broadcasts, value: '1' }
+    # Deshabilitar source routing
+    - { name: net.ipv4.conf.all.accept_source_route, value: '0' }
+    - { name: net.ipv6.conf.all.accept_source_route, value: '0' }
+    # Protección contra SYN flood
+    - { name: net.ipv4.tcp_syncookies, value: '1' }
+    # Rango de puertos efímeros
+    - { name: net.ipv4.ip_local_port_range, value: '32768 65535' }
+    # Deshabilitar magic SysRq
+    - { name: kernel.sysrq, value: '0' }
+    # Restringir ptrace
+    - { name: kernel.yama.ptrace_scope, value: '1' }
+    # Deshabilitar core dumps
+    - { name: fs.suid_dumpable, value: '0' }</code></pre>
+
+            <h2>Monitoreo de integridad con AIDE</h2>
+            <p>AIDE (Advanced Intrusion Detection Environment) es un sistema de detección de cambios en archivos basado en una base de datos de checksums. Cuando un archivo es modificado sin autorización —por ejemplo, por un atacante que reemplaza un binario del sistema— AIDE lo detecta y alerta.</p>
+
+            <h3>Instalación y configuración inicial</h3>
+            <pre><code># Instalación
+sudo apt install -y aide
+
+# Configuración en /etc/aide/aide.conf
+sudo cp /etc/aide/aide.conf /etc/aide/aide.conf.default</code></pre>
+
+            <p>Configuración típica de AIDE para un servidor de producción:</p>
+
+            <pre><code># /etc/aide/aide.conf
+# Definir macros de reglas
+Binarios = p+i+n+u+g+s+b+m+c+md5+sha256
+Config   = p+i+n+u+g+s+b+m+c+sha512
+Logs     = p+i+n+u+g+size
+Directorios = p+i+n+u+g
+
+# Directorios del sistema
+/bin    Binarios
+/sbin   Binarios
+/usr/bin Binarios
+/usr/sbin Binarios
+/lib    Binarios
+/lib64  Binarios
+
+# Configuración crítica
+/etc Binarios
+!/etc/ssl/certs
+!/etc/fstab
+
+# Archivos de log
+/var/log Config
+!/var/log/*.gz
+!/var/log/*.bz2
+
+# Directorios home
+/home Binarios
+
+# Web root
+/var/www Binarios
+!/var/www/cache
+
+# Ignorar sistemas de archivos virtuales
+!/proc
+!/sys
+!/dev
+!/run
+!/mnt
+!/media
+
+# Base de datos
+!/var/lib/aide
+
+# Reglas personalizadas para directorios específicos
+/etc/ssh Binarios
+/etc/audit Config
+/etc/cron.d Config</code></pre>
+
+            <h3>Inicializar la base de datos</h3>
+            <pre><code># Crear la base de datos inicial
+sudo aideinit
+
+# La base de datos se genera en /var/lib/aide/aide.db.new
+# Renombrar como base operativa
+sudo mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+# Verificar integridad por primera vez
+sudo aide --check</code></pre>
+
+            <h3>Monitoreo continuo con cron</h3>
+            <pre><code>#!/bin/bash
+# /usr/local/bin/aide-check.sh
+DB="/var/lib/aide/aide.db"
+OUTPUT="/var/log/aide-report-$(date +%Y%m%d).txt"
+
+if [ ! -f "$DB" ]; then
+    echo "ERROR: Base de datos AIDE no encontrada" | mail -s "AIDE Error" admin@example.com
+    exit 1
+fi
+
+# Ejecutar verificación
+aide --check > "$OUTPUT" 2>&1
+
+# Verificar resultados
+if grep -q "changed entries" "$OUTPUT"; then
+    CHANGED=$(grep "changed entries" "$OUTPUT" | awk '{print $NF}')
+    if [ "$CHANGED" -gt 0 ]; then
+        mail -s "ALERTA: $CHANGED cambios detectados por AIDE en $(hostname)" \
+             admin@example.com < "$OUTPUT"
+    fi
+fi
+
+# Actualizar base de datos si los cambios fueron autorizados
+# sudo aide --update && sudo mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db</code></pre>
+
+            <pre><code># Programar verificación diaria
+0 4 * * * root /usr/local/bin/aide-check.sh</code></pre>
+
+            <p>Es importante establecer un proceso para manejar las alertas de AIDE. Los cambios legítimos (actualizaciones, despliegues) deben registrar el cambio en la base de datos. Cualquier cambio no autorizado debe investigarse inmediatamente.</p>
+
+            <h2>Configuración de Grub y arranque seguro</h2>
+            <p>Proteger el cargador de arranque evita que un atacante con acceso físico al servidor pueda bootear con un kernel modificado, montar el sistema de archivos en modo recovery o modificar parámetros de arranque para deshabilitar la seguridad.</p>
+
+            <h3>Proteger Grub con contraseña</h3>
+            <pre><code># Generar hash de la contraseña
+grub-mkpasswd-pbkdf2
+# Ingresa la contraseña cuando se solicite
+# Copia el hash generado (comienza con "grub.pbkdf2.sha512...")</code></pre>
+
+            <p>Agrega la siguiente configuración en <code>/etc/grub.d/40_custom</code>:</p>
+
+            <pre><code>#!/bin/sh
+exec tail -n +3 $0
+
+set superusers="admin"
+password_pbkdf2 admin grub.pbkdf2.sha512.10000.HEXAQUI...COPIADO
+
+# Restringir edición en arranque
+set unrestricted_menu="y"</code></pre>
+
+            <p>Protege el archivo de configuración y actualiza Grub:</p>
+
+            <pre><code># Asegurar permisos del archivo
+sudo chmod 700 /etc/grub.d/40_custom
+sudo chown root:root /etc/grub.d/40_custom
+
+# Actualizar configuración de Grub
+sudo update-grub</code></pre>
+
+            <h3>Parámetros de hardening del kernel en Grub</h3>
+            <p>Modifica <code>/etc/default/grub</code> para agregar parámetros de seguridad al kernel:</p>
+
+            <pre><code># /etc/default/grub
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+GRUB_CMDLINE_LINUX="ipv6.disable=1 audit=1 audit_backlog_limit=8192 \
+  slab_nomerge init_on_alloc=1 init_on_free=1 page_alloc_shuffle=1 \
+  pti=on randomize_kstack_offset=on spec_store_bypass_disable=on \
+  spectre_v2=on tsx=off tsx_async_abort=full,nosmt mds=full,nosmt \
+  l1tf=full,force nosmt=force kvm.nx_huge_pages=force \
+  module.sig_enforce=1 lockdown=confidentiality"
+
+# Asegurar permisos del archivo
+sudo chmod 600 /etc/default/grub
+
+# Actualizar Grub
+sudo update-grub</code></pre>
+
+            <p>Explicación de los parámetros clave:</p>
+            <ul>
+                <li><code>audit=1 audit_backlog_limit=8192</code>: Activa auditd desde el arranque, antes de que cualquier servicio inicie</li>
+                <li><code>slab_nomerge</code>: Previene ataques de heap overflow al no fusionar slabs de diferentes tamaños</li>
+                <li><code>init_on_alloc=1 init_on_free=1</code>: Zeroea la memoria al asignar y liberar, evitando fugas de datos</li>
+                <li><code>pti=on</code>: Page Table Isolation, mitigación contra Meltdown</li>
+                <li><code>spectre_v2=on spec_store_bypass_disable=on</code>: Mitigaciones contra Spectre</li>
+                <li><code>module.sig_enforce=1</code>: Solo permite cargar módulos del kernel firmados</li>
+                <li><code>lockdown=confidentiality</code>: Restringe el acceso a /dev/mem, /dev/kmem y kprobes</li>
+                <li><code>ipv6.disable=1</code>: Deshabilita IPv6 si no se utiliza (reducir superficie de ataque)</li>
+            </ul>
+
+            <h3>Protección adicional del arranque</h3>
+            <pre><code># Establecer contraseña de BIOS/EFI (fuera del SO)
+# Configurar orden de arranque para que solo bootee desde disco
+# Deshabilitar boot desde USB/CD en BIOS
+
+# Bloquear acceso a la consola de recovery en Grub
+# Por defecto Ubuntu muestra opciones de recovery. Deshabilitarlas:
+sudo sed -i 's/GRUB_DISABLE_RECOVERY=false/GRUB_DISABLE_RECOVERY=true/' /etc/default/grub
+sudo update-grub
+
+# En sistemas UEFI, proteger con Secure Boot
+sudo apt install -y shim-signed
+sudo mokutil --enable-validation</code></pre>
+
+            <h2>Separación de servicios con contenedores</h2>
+            <p>Una de las estrategias de hardening más efectivas es el principio de aislamiento: cada servicio debe ejecutarse en su propio contenedor, con su propio sistema de archivos, red y recursos. Esto limita el alcance de un compromiso: si un atacante vulnera una aplicación web, no tiene acceso automático al resto del sistema ni a otros servicios.</p>
+
+            <h3>Docker vs Podman</h3>
+            <p>Docker es la plataforma de contenedores más extendida, pero requiere un daemon ejecutándose como root, lo que históricamente ha sido vector de ataques de escalación de privilegios. <strong>Podman</strong> es una alternativa sin daemon (daemonless) que ejecuta contenedores como el usuario actual, no requiere permisos de root, y es compatible con las imágenes Docker.</p>
+
+            <p>Para entornos de producción donde la seguridad es crítica, mi recomendación es Podman en combinación con systemd para la gestión del ciclo de vida de los contenedores.</p>
+
+            <h3>Ejemplo: Aislar una aplicación web con Docker</h3>
+            <pre><code># Usar una red dedicada para el stack
+docker network create --internal --subnet 172.20.0.0/16 app-net
+
+# Contenedor de base de datos (sin acceso a internet)
+docker run -d \
+  --name db \
+  --network app-net \
+  --restart always \
+  --read-only \
+  --tmpfs /tmp:noexec,nosuid,size=100M \
+  --tmpfs /var/run/mysqld:noexec,nosuid,size=50M \
+  -v db-data:/var/lib/mysql:rw,nosuid,noexec \
+  -e MYSQL_ROOT_PASSWORD_FILE=/run/secrets/db_root_pw \
+  --secret db_root_pw \
+  --security-opt=no-new-privileges:true \
+  --security-opt=seccomp=/path/to/seccomp-profile.json \
+  --cap-drop=ALL \
+  --cap-add=SETUID \
+  --cap-add=SETGID \
+  mysql:8.0
+
+# Contenedor de aplicación (solo conectado a db)
+docker run -d \
+  --name app \
+  --network app-net \
+  --restart always \
+  --read-only \
+  --tmpfs /tmp:noexec,nosuid,size=100M \
+  -v app-code:/var/www/html:ro \
+  -v app-logs:/var/log/apache2:rw,nosuid,noexec \
+  --security-opt=no-new-privileges:true \
+  --cap-drop=ALL \
+  --cap-add=NET_BIND_SERVICE \
+  -p 443:443 \
+  php:8.2-apache
+
+# Proxy inverso (único con exposición a internet)
+docker run -d \
+  --name proxy \
+  --network app-net \
+  --restart always \
+  --read-only \
+  --tmpfs /tmp:noexec,nosuid,size=100M \
+  -v nginx-config:/etc/nginx:ro \
+  -v nginx-logs:/var/log/nginx:rw \
+  --security-opt=no-new-privileges:true \
+  --cap-drop=ALL \
+  --cap-add=NET_BIND_SERVICE \
+  --cap-add=NET_RAW \
+  -p 80:80 \
+  -p 443:443 \
+  nginx:alpine</code></pre>
+
+            <h3>Buenas prácticas de seguridad en contenedores</h3>
+            <ul>
+                <li><strong>Usar imágenes oficiales y ligeras</strong>: Alpine o distroless reducen la superficie de ataque. Nunca uses imágenes con etiqueta <code>:latest</code>; versiona explícitamente.</li>
+                <li><strong>Escaneo de vulnerabilidades</strong>: Usa <code>docker scan</code>, Trivy o Grype para analizar imágenes antes de desplegarlas.</li>
+                <li><strong>Read-only filesystem</strong>: Monta el sistema de archivos del contenedor como solo lectura y usa tmpfs para escrituras temporales.</li>
+                <li><strong>Eliminar capacidades</strong>: Usa <code>--cap-drop=ALL</code> y solo agrega las estrictamente necesarias.</li>
+                <li><strong>No ejecutar como root</strong>: Usa <code>USER</code> en el Dockerfile y <code>--user</code> en el runtime.</li>
+                <li><strong>Redes aisladas</strong>: Cada stack de servicios en su propia red. Solo el proxy inverso debe tener puertos expuestos.</li>
+                <li><strong>Límites de recursos</strong>: Usa <code>--memory</code>, <code>--cpus</code>, <code>--pids-limit</code> para evitar DoS por contenedor comprometido.</li>
+            </ul>
+
+            <h3>Podman con systemd: Gestión nativa</h3>
+            <pre><code># Ejecutar contenedor como usuario no root
+podman run -d \
+  --name web-app \
+  --restart always \
+  --read-only \
+  --cap-drop=ALL \
+  --cap-add=NET_BIND_SERVICE \
+  --memory=512m \
+  --cpus=0.5 \
+  --health-cmd="curl -f http://localhost/health || exit 1" \
+  --health-interval=30s \
+  --health-retries=3 \
+  -p 8080:8080 \
+  myapp:latest
+
+# Generar unidad systemd para el contenedor
+podman generate systemd --name web-app --files --new
+# Esto genera ~/.config/systemd/user/container-web-app.service
+
+# Habilitar el servicio como usuario
+systemctl --user enable container-web-app.service
+systemctl --user start container-web-app.service
+
+# Para servicios del sistema (root)
+sudo mv container-web-app.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now container-web-app</code></pre>
+
+            <h3>Docker Compose seguro</h3>
+            <pre><code># docker-compose.yml
+version: '3.9'
+
+services:
+  app:
+    image: myapp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100M
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 0.5
+    pids_limit: 100
+    networks:
+      - internal
+    volumes:
+      - app-data:/var/www/html:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100M
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+      - CHOWN
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 1g
+    cpus: 1.0
+    networks:
+      - internal
+    volumes:
+      - mysql-data:/var/lib/mysql:rw,nosuid,noexec
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_pw
+    secrets:
+      - db_root_pw
+
+  proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50M
+      - /var/run:noexec,nosuid,size=50M
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+      - NET_RAW
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 0.3
+    networks:
+      - internal
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-config:/etc/nginx:ro
+      - nginx-logs:/var/log/nginx:rw
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  app-data:
+  mysql-data:
+  nginx-config:
+  nginx-logs:
+
+secrets:
+  db_root_pw:
+    file: ./secrets/db_root_pw.txt</code></pre>
 
             <h2>Checklist de Hardening</h2>
             <ul>
-                <li>✅ Sistema actualizado con últimos parches</li>
-                <li>✅ SSH en puerto no estándar</li>
-                <li>✅ Login root deshabilitado</li>
-                <li>✅ Autenticación por llaves SSH</li>
-                <li>✅ Firewall configurado y activo</li>
-                <li>✅ fail2ban protegiendo contra brute force</li>
+                <li>✅ Sistema actualizado con últimos parches de seguridad</li>
+                <li>✅ SSH en puerto no estándar, solo llaves, sin root</li>
+                <li>✅ Firewall UFW configurado con denegación por defecto</li>
+                <li>✅ fail2ban protegiendo contra ataques de fuerza bruta</li>
+                <li>✅ auditd activo con reglas de monitoreo de archivos y comandos</li>
+                <li>✅ Servicios innecesarios desinstalados o deshabilitados</li>
+                <li>✅ CIS Level 1 evaluado y remediado vía OpenSCAP</li>
+                <li>✅ Lynis configurado para auditorías periódicas</li>
+                <li>✅ AIDE desplegado con monitoreo de integridad de archivos</li>
+                <li>✅ Grub protegido con contraseña y parámetros de kernel seguros</li>
+                <li>✅ ClamAV, rkhunter y chkrootkit para detección de malware</li>
+                <li>✅ Ansible playbook para hardening reproducible</li>
+                <li>✅ Contenedores con mínimos privilegios, redes aisladas y filesystem read-only</li>
+                <li>✅ Parámetros sysctl de hardening del kernel aplicados</li>
+                <li>✅ Copias de seguridad cifradas y con rotación definida</li>
+                <li>✅ Plan de respuesta a incidentes documentado</li>
             </ul>
 
             <h2>Conclusión</h2>
-            <p>El hardening no es un evento único sino un proceso continuo. Programa auditorías mensuales y mantén registro de los cambios realizados.</p>
+            <p>El hardening no es un evento único sino un proceso continuo. Las amenazas evolucionan, aparecen nuevas vulnerabilidades y los equipos de seguridad deben adaptarse constantemente. Lo que hoy es una configuración segura, mañana puede ser un vector de ataque.</p>
+
+            <p>Implementa las medidas de esta guía de forma progresiva: empieza con el checklist básico (SSH, firewall, fail2ban), luego agrega auditoría con Lynis y auditd, después automatiza con Ansible, y finalmente implementa el monitoreo de integridad con AIDE y la segregación de servicios con contenedores. Programa auditorías mensuales, mantén un registro de cambios y, sobre todo, documenta cada decisión de seguridad.</p>
+
+            <p>Recuerda: la seguridad absoluta no existe. El objetivo es hacer que el costo de comprometer tu sistema sea mayor que el beneficio que un atacante obtendría. Con las prácticas descritas en esta guía, estarás muy por delante del 99% de los servidores en internet.</p>
         </div>
     </div>
 

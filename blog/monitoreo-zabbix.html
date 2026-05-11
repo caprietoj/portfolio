@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoreo de Redes y Servidores con Zabbix: Guía Completa | Caprietoj.com</title>
+    <meta name="description" content="Implementa monitoreo profesional con Zabbix: descubrimiento automático, alertas, dashboards y mejores prácticas para infraestructura IT.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; }
+        .hero-inner { max-width: 800px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        .article-content tr:last-child td { border-bottom: none; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            nav { position: relative; }
+            nav .nav-content { flex-wrap: wrap; padding: 12px 16px; }
+            nav .nav-links { display: none; }
+            .article-hero { padding: 80px 16px 40px; }
+            .hero-inner { max-width: 100%; }
+            .category-badge { font-size: 0.75rem; padding: 6px 14px; }
+            .article-title { font-size: 1.6rem; line-height: 1.3; padding: 0 8px; }
+            .article-meta { flex-direction: column; gap: 8px; font-size: 0.85rem; }
+            .featured-image { margin: 0 auto; padding: 0 16px; }
+            .featured-image img { height: 200px; border-radius: 12px; }
+            .article-container { padding: 24px 16px 60px; }
+            .article-content { padding: 24px 20px; border-radius: 16px; }
+            .article-content h2 { font-size: 1.4rem; margin: 32px 0 16px; }
+            .article-content h3 { font-size: 1.15rem; margin: 24px 0 12px; }
+            .article-content p { font-size: 1rem; line-height: 1.7; }
+            .article-content pre { padding: 16px; font-size: 0.8rem; border-radius: 10px; overflow-x: scroll; }
+            .article-content ul, .article-content ol { padding-left: 22px; }
+            .article-content li { font-size: 0.95rem; }
+            .back-link { font-size: 0.85rem; padding: 10px 16px; margin-bottom: 24px; }
+            footer { padding: 24px 16px; }
+            footer p { font-size: 0.8rem; }
+        }
+        @media (max-width: 480px) {
+            .article-title { font-size: 1.4rem; }
+            .featured-image img { height: 160px; }
+            .article-content { padding: 20px 16px; }
+        }
+        {
+            .nav-links { display: none; }
+            .article-title { font-size: 1.8rem; }
+            .featured-image img { height: 250px; }
+            .article-content { padding: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🌐 Redes</span>
+            <h1 class="article-title">Monitoreo de Redes y Servidores con Zabbix: Guía Completa</h1>
+            <div class="article-meta">
+                <span>📅 Junio 2024</span>
+                <span>⏱️ 14 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=600&fit=crop" alt="Dashboard de monitoreo Zabbix">
+    </div>
+
+    <div class="article-container">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+
+        <div class="article-content">
+            <h2>1. Introducción</h2>
+            <p>En cualquier infraestructura IT, saber qué está ocurriendo en cada servidor, servicio y dispositivo de red en tiempo real es crítico. Sin monitoreo, las fallas se detectan cuando los usuarios reportan problemas, lo que significa tiempo de inactividad no planificado, pérdida de ingresos y daño a la reputación.</p>
+
+            <h3>¿Por qué Zabbix?</h3>
+            <p>Zabbix es una plataforma de monitoreo open source de nivel empresarial. A diferencia de Nagios (configuración basada en archivos estáticos), Prometheus (ecosistema más orientado a containers) o PRTG (licenciamiento por sensor), Zabbix ofrece:</p>
+            <table>
+                <tr><th>Característica</th><th>Zabbix</th><th>Nagios</th><th>Prometheus</th><th>PRTG</th></tr>
+                <tr><td>Arquitectura</td><td>Centralizada con proxies</td><td>Centralizada</td><td>Pull distribuido</td><td>Centralizada</td></tr>
+                <tr><td>Auto-descubrimiento</td><td>Nativo (LLD + Network Discovery)</td><td>Limitado</td><td>Service Discovery</td><td>Auto-detect</td></tr>
+                <tr><td>Alertas</td><td>Completas (escalado, acciones)</td><td>Básicas</td><td>Alertmanager</td><td>Avanzadas</td></tr>
+                <tr><td>SNMP / IPMI / JMX</td><td>Soporte nativo</td><td>Plugins</td><td>Exporters</td><td>Soporte nativo</td></tr>
+                <tr><td>Licencia</td><td>GPL 2.0 (gratuito)</td><td>GPL (gratuito)</td><td>Apache 2.0 (gratuito)</td><td>Comercial</td></tr>
+            </table>
+
+            <h3>Arquitectura general</h3>
+            <p>Zabbix sigue un modelo cliente-servidor con tres componentes principales: <strong>Zabbix Server</strong> (procesamiento central), <strong>Zabbix Proxy</strong> (recolección distribuida opcional) y <strong>Zabbix Agent</strong> (instalado en los hosts monitoreados). La base de datos PostgreSQL con TimescaleDB permite manejar millones de métricas por segundo mediante particionado automático.</p>
+
+            <h2>2. Arquitectura de Zabbix</h2>
+            <p>Comprender la arquitectura es clave para diseñar un despliegue escalable.</p>
+
+            <h3>Componentes del sistema</h3>
+            <ul>
+                <li><strong>Zabbix Server</strong>: Motor central que recibe métricas, evalúa triggers, envía alertas y almacena datos. Puede monitorear hasta 10,000+ hosts con hardware adecuado.</li>
+                <li><strong>Zabbix Proxy</strong>: Recolecta datos en ubicaciones remotas y los envía al servidor de forma desatendida. Reduce la carga del servidor principal y funciona en modo offline (almacena en cola).</li>
+                <li><strong>Zabbix Agent</strong>: Proceso liviano instalado en los hosts que recolecta métricas del SO, procesos, servicios y logs. Existen versiones para Windows, Linux, macOS, AIX, Solaris, etc.</li>
+                <li><strong>Base de datos</strong>: PostgreSQL + TimescaleDB ofrece particionado automático por tiempo (hypertables), compresión y mejor rendimiento en queries de series temporales.</li>
+                <li><strong>Web Interface</strong>: Frontend PHP que se conecta a la base de datos. Soporta dashboards, mapas, informes y administración.</li>
+            </ul>
+
+            <p>Flujo de datos típico:</p>
+            <pre><code>Host → Agent (Zabbix Agent activo/pasivo)
+  → Zabbix Proxy (opcional, para segmentación remota)
+    → Zabbix Server (evalúa triggers, escribe en DB)
+      → Database PostgreSQL + TimescaleDB (hypertables)
+        → Web Interface / API REST → Dashboards y Alertas</code></pre>
+
+            <h3>Modos de comunicación</h3>
+            <ul>
+                <li><strong>Agente pasivo</strong>: El servidor consulta al agente en el puerto 10050. Simple y directo.</li>
+                <li><strong>Agente activo</strong>: El agente envía datos al servidor en el puerto 10051. Escala mejor con miles de hosts.</li>
+                <li><strong>Proxy activo/pasivo</strong>: El proxy puede enviar datos al servidor (activo) o esperar a que el servidor los solicite (pasivo).</li>
+            </ul>
+
+            <h2>3. Instalación en Ubuntu 22.04 LTS</h2>
+            <p>A continuación, una instalación completa de Zabbix 7.0 LTS con Nginx, PostgreSQL 16 y TimescaleDB para particionado automático.</p>
+
+            <h3>Paso 1: Instalar PostgreSQL 16 y TimescaleDB</h3>
+            <pre><code># Agregar repositorio oficial de PostgreSQL
+sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+wget -qO- https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+
+# Agregar repositorio de TimescaleDB
+sudo add-apt-repository -y "deb https://packagecloud.io/timescale/timescaledb/ubuntu/ $(lsb_release -cs) main"
+wget -qO- https://packagecloud.io/timescale/timescaledb/gpgkey | sudo apt-key add -
+
+sudo apt update
+sudo apt install -y postgresql-16 postgresql-client-16 timescaledb-2-postgresql-16
+
+# Configurar TimescaleDB en postgresql.conf
+sudo timescaledb-tune --quiet --yes
+sudo systemctl restart postgresql</code></pre>
+
+            <h3>Paso 2: Crear base de datos y usuario</h3>
+            <pre><code>sudo -u postgres createuser --pwprompt zabbix
+sudo -u postgres createdb -O zabbix zabbix
+sudo -u postgres psql -c "ALTER DATABASE zabbix SET search_path TO public,zabbix;"
+
+# Habilitar TimescaleDB en la base de datos
+sudo -u postgres psql -d zabbix -c "CREATE EXTENSION IF NOT EXISTS timescaledb;"</code></pre>
+
+            <h3>Paso 3: Instalar Zabbix Server, Agent y Frontend</h3>
+            <pre><code># Agregar repositorio oficial de Zabbix
+wget https://repo.zabbix.com/zabbix/7.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_7.0-1+ubuntu22.04_all.deb
+sudo dpkg -i zabbix-release_7.0-1+ubuntu22.04_all.deb
+sudo apt update
+
+# Instalar paquetes
+sudo apt install -y zabbix-server-pgsql zabbix-frontend-php \
+  zabbix-nginx-conf zabbix-sql-scripts zabbix-agent \
+  zabbix-get zabbix-sender
+
+# Importar esquema de base de datos
+zcat /usr/share/zabbix-sql-scripts/postgresql/server.sql.gz | \
+  sed 's/CREATE INDEX/CREATE INDEX CONCURRENTLY/g' | \
+  sudo -u zabbix psql -d zabbix
+
+# Aplicar particionado de TimescaleDB
+cat /usr/share/zabbix-sql-scripts/postgresql/timescaledb.sql | \
+  sudo -u zabbix psql -d zabbix</code></pre>
+
+            <h3>Paso 4: Configurar Zabbix Server</h3>
+            <pre><code># Editar /etc/zabbix/zabbix_server.conf
+sudo tee -a /etc/zabbix/zabbix_server.conf << 'EOF'
+DBHost=localhost
+DBName=zabbix
+DBUser=zabbix
+DBPassword=TuPasswordSegura
+DBPort=5432
+Timeout=30
+LogSlowQueries=3000
+StatsAllowedIP=127.0.0.1
+StartPollers=20
+StartPreprocessors=8
+StartPingers=5
+CacheSize=512M
+HistoryCacheSize=256M
+TrendCacheSize=128M
+HistoryTextCacheSize=256M
+ValueCacheSize=256M
+EOF</code></pre>
+
+            <h3>Paso 5: Configurar Nginx</h3>
+            <pre><code># /etc/nginx/sites-available/default (parcial)
+server {
+    listen 80;
+    server_name monitoring.tudominio.com;
+
+    root /usr/share/zabbix;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+}
+
+# Configurar PHP-FPM
+sed -i 's/^max_execution_time = .*/max_execution_time = 600/' /etc/php/8.3/fpm/php.ini
+sed -i 's/^max_input_time = .*/max_input_time = 600/' /etc/php/8.3/fpm/php.ini
+sed -i 's/^post_max_size = .*/post_max_size = 80M/' /etc/php/8.3/fpm/php.ini
+
+# Iniciar servicios
+sudo systemctl enable zabbix-server zabbix-agent nginx php8.3-fpm
+sudo systemctl restart zabbix-server zabbix-agent nginx php8.3-fpm</code></pre>
+
+            <p>Completa la instalación accediendo a <code>http://monitoring.tudominio.com</code> y siguiendo el asistente web. Los valores por defecto (usuario <strong>Admin</strong>, contraseña <strong>zabbix</strong>) te darán acceso al panel.</p>
+
+            <h2>4. Configuración de Hosts y Templates</h2>
+            <p>Zabbix organiza el monitoreo mediante <strong>hosts</strong> (entidades monitoreadas) y <strong>templates</strong> (conjuntos reutilizables de items, triggers y dashboards).</p>
+
+            <h3>Crear un host manualmente</h3>
+            <p>Desde la interfaz web: <em>Data Collection → Hosts → Create Host</em>:</p>
+            <pre><code>Nombre: Servidor Web Producción 01
+Nombre visible: web-prod-01
+Grupos: Linux Servers, Web Servers
+Interfaces: Agent 192.168.1.10:10050
+Templates: Template OS Linux by Zabbix agent
+            Template App HTTP Service
+            Template Module ICMP Ping
+Macros: {$CPU.UTIL.CRIT} = 90
+        {$MEMORY.UTIL.MAX} = 95
+        {$DISK.UTIL.CRIT} = 92</code></pre>
+
+            <h3>Templates incluidos más utilizados</h3>
+            <table>
+                <tr><th>Template</th><th>Monitorea</th></tr>
+                <tr><td>Template OS Linux by Zabbix agent</td><td>CPU, memoria, disco, red, procesos, sistema de archivos</td></tr>
+                <tr><td>Template App HTTP Service</td><td>Disponibilidad y rendimiento de sitios web</td></tr>
+                <tr><td>Template Module ICMP Ping</td><td>Latencia y pérdida de paquetes</td></tr>
+                <tr><td>Template DB MySQL by Zabbix agent</td><td>Queries, conexiones, innodb, replicación</td></tr>
+                <tr><td>Template Net Network Generic Device SNMPv2</td><td>Interfaces, tráfico, errores en switches/routers</td></tr>
+            </table>
+
+            <h3>Crear un template personalizado</h3>
+            <p>Para crear un template para Nginx:</p>
+            <pre><code>1. Data Collection → Templates → Create Template
+2. Nombre: Template App Nginx HTTP por Agent
+3. Groups: Templates/Applications
+4. Crear item:
+   - Name: Nginx - active connections
+   - Key: nginx.active_connections
+   - Type: Zabbix agent (active)
+   - Key: web.page.get["http://localhost/nginx_status","",""]
+   - Preprocessing: JSONPath ($.connections.active)
+   - Update interval: 60s
+5. Crear trigger:
+   - Name: Alta tasa de conexiones activas en Nginx
+   - Expression: avg(/Template App Nginx HTTP por Agent/nginx.active_connections,5m) > 1000
+   - Severity: Warning</code></pre>
+
+            <p>Configuración en el servidor Nginx para exponer el estado:</p>
+            <pre><code># /etc/nginx/sites-available/default
+location /nginx_status {
+    stub_status on;
+    allow 127.0.0.1;
+    deny all;
+}</code></pre>
+
+            <h2>5. Items y Triggers</h2>
+            <p>Los <strong>items</strong> recolectan datos; los <strong>triggers</strong> evalúan condiciones sobre esos datos para generar eventos.</p>
+
+            <h3>Tipos de Items</h3>
+            <table>
+                <tr><th>Tipo</th><th>Descripción</th><th>Caso de uso</th></tr>
+                <tr><td>Zabbix agent</td><td>Métricas del SO vía agente Zabbix</td><td>CPU, RAM, disco, procesos</td></tr>
+                <tr><td>SNMP</td><td>Consulta dispositivos de red vía OIDs</td><td>Switches, routers, impresoras</td></tr>
+                <tr><td>IPMI</td><td>Hardware de servidores (BMC/iDRAC)</td><td>Temperatura, ventiladores, voltaje</td></tr>
+                <tr><td>HTTP agent</td><td>Realiza peticiones HTTP(S)</td><td>APIs REST, health checks</td></tr>
+                <tr><td>JMX</td><td>Métricas de Java (JMX)</td><td>Tomcat, Kafka, Elasticsearch</td></tr>
+                <tr><td>Trapper</td><td>Recibe datos vía zabbix_sender</td><td>Métricas personalizadas</td></tr>
+                <tr><td>Calculated</td><td>Fórmulas basadas en otros items</td><td>Porcentajes, promedios</td></tr>
+            </table>
+
+            <h3>Expresiones de Trigger: ejemplos reales</h3>
+            <pre><code># CPU al 90% durante 5 minutos
+avg(/host/system.cpu.util,5m) > 90
+
+# Disco raíz por encima del 85%
+last(/host/vfs.fs.size[/,pused]) > 85
+
+# Servicio HTTP caído (3 chequeos fallidos consecutivos)
+max(/host/net.tcp.service[http],#3) = 0
+
+# Tasa de errores en interfaz de red alta
+rate(/host/net.if.in[eth0,errors],5m) > 100
+
+# Comparación de latencia ICMP contra umbral
+avg(/host/icmppingsec,10m) > 0.500
+
+# Caída repentina de conexiones MySQL
+max(/host/mysql.active_connections,5m) / avg(/host/mysql.active_connections,30m) < 0.5</code></pre>
+
+            <h3>Trigger con dependencias</h3>
+            <p>Si un servidor está caído, no tiene sentido alertar por cada servicio individual. Las dependencias evitan tormentas de alertas:</p>
+            <pre><code>Trigger padre: Servidor Web Prod 01 está CAÍDO
+  └─ Depende: Servicio HTTP en Web Prod 01 no disponible
+  └─ Depende: MySQL en Web Prod 01 no responde
+  └─ Depende: Latencia alta en Web Prod 01</code></pre>
+
+            <h2>6. Discovery y Auto-registro</h2>
+            <p>En entornos con decenas o cientos de servidores, configurar cada host manualmente es inviable. Zabbix ofrece tres mecanismos de descubrimiento.</p>
+
+            <h3>Network Discovery</h3>
+            <p>Escanea rangos de red y descubre dispositivos por ICMP, puertos SNMP o servicios:</p>
+            <pre><code>Configuración: Data Collection → Discovery → Create discovery rule
+Name: Descubrimiento Red Local 192.168.1.0/24
+IP range: 192.168.1.1-254
+Checks:
+  - ICMP ping (discover si responde ping)
+  - SNMP v2c (discover dispositivos SNMP)
+  - Zabbix agent (discover si hay agente en puerto 10050)
+Delay: 3600s (1 hora)
+
+Acciones de discovery:
+  - Si Device status = Up AND Service = Zabbix agent
+    → Add host to group "Linux Servers"
+    → Link template "Template OS Linux by Zabbix agent"</code></pre>
+
+            <h3>Auto-registro de Agentes Activos</h3>
+            <p>Los agentes activos pueden registrarse automáticamente en el servidor sin configuración previa:</p>
+            <pre><code># En /etc/zabbix/zabbix_agent2.conf
+Server=monitoring.tudominio.com
+ServerActive=monitoring.tudominio.com:10051
+Hostname=web-prod-01
+HostMetadata=linux,webserver,production
+TLSConnect=psk
+TLSPSKIdentity=web-prod-01
+TLSPSKFile=/etc/zabbix/zabbix_agentd.psk
+
+# En el servidor Zabbix, crear acción de auto-registro:
+Administration → Actions → Auto-registration
+Conditions: Host metadata like "linux"
+            Host metadata like "production"
+Operations: Add to group "Linux Servers"
+            Add to group "Production"
+            Link template "Template OS Linux by Zabbix agent"</code></pre>
+
+            <h3>Low-Level Discovery (LLD)</h3>
+            <p>Zabbix descubre automáticamente discos, interfaces de red, monitores SNMP, etc.:</p>
+            <pre><code># LLD para discos - Template OS Linux ya lo incluye:
+{#FSNAME} → /, /var, /home
+{#FSTYPE} → ext4, xfs
+{#FSLABEL} → root, var
+
+# Ejemplo de trigger generado por LLD:
+last(/host/vfs.fs.size[{#FSNAME},pused]) > 90
+# Esto genera alerta individual para cada disco montado</code></pre>
+
+            <h2>7. Alertas y Notificaciones</h2>
+            <p>Zabbix soporta múltiples <strong>media types</strong> para enviar alertas por diferentes canales.</p>
+
+            <h3>Media Type: Correo electrónico</h3>
+            <pre><code>Administration → Media Types → Email
+SMTP server: smtp.gmail.com
+SMTP server port: 587
+SMTP helo: gmail.com
+SMTP email: monitoreo@tudominio.com
+Connection security: STARTTLS
+Authentication: Username & Password
+Username: monitoreo@tudominio.com
+Password: contraseña_de_aplicación</code></pre>
+
+            <h3>Media Type: Telegram</h3>
+            <pre><code># Crear bot en Telegram con @BotFather
+# Obtener token: 1234567890:ABCdefGHIjklmNOPqrStuVWXyz
+
+Administration → Media Types → Telegram
+Token: 1234567890:ABCdefGHIjklmNOPqrStuVWXyz
+API URL: https://api.telegram.org
+
+# Obtener Chat ID:
+# Enviar mensaje al bot y luego visitar:
+# https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates
+
+# Mensaje personalizado:
+{TPLCONTENT}
+
+# Trigger: {TRIGGER.NAME}
+# Host: {HOST.NAME}
+# Severidad: {TRIGGER.SEVERITY}
+# Fecha: {EVENT.DATE} {EVENT.TIME}
+# Estado actual: {TRIGGER.STATUS}</code></pre>
+
+            <h3>Media Type: Slack (Webhook)</h3>
+            <pre><code># Crear Slack App en api.slack.com → Webhooks entrantes
+# Obtener URL: https://hooks.slack.com/services/T00/B00/xxxxx
+
+Administration → Media Types → Webhook
+Parameters:
+  - payload: {"text": "{ALERT.MESSAGE}"}
+  - url: https://hooks.slack.com/services/T00/B00/xxxxx
+Content-Type: application/json</code></pre>
+
+            <h3>Escalado de alertas</h3>
+            <p>Define escalados para que si un problema no se resuelve, se notifique a niveles superiores:</p>
+            <pre><code>Configuración: Alerts → Actions → Trigger Actions → Create action
+Name: Escalado de Incidentes Críticos
+
+Etapa 1 (0-15 min):
+  Notificar al Grupo SysAdmin vía Telegram
+  Enviar email al equipo de turno
+
+Etapa 2 (15-60 min):
+  Notificar al Líder de Infraestructura vía Telegram + SMS
+  Crear ticket en sistema ITSM (vía webhook)
+
+Etapa 3 (&gt; 60 min):
+  Notificar al CTO
+  Escalar a Gerencia vía email + Slack
+
+Default operation step duration: 900s (15 min)</code></pre>
+
+            <h2>8. Dashboards y Visualización</h2>
+            <p>Zabbix 7.0 ofrece dashboards altamente personalizables con widgets en HTML5.</p>
+
+            <h3>Crear un Dashboard de Estado General</h3>
+            <pre><code>Monitoring → Dashboards → Create dashboard
+Name: Estado General Infraestructura
+
+Widgets recomendados:
+1. Filtro de tiempo (Time period selector)
+2. Problems (Severity + Host group filter)
+3. Top hosts con más problemas
+4. CPU promedio por grupo (Gauge)
+5. Memoria disponible (Gauge)
+6. Tráfico de red por interfaz (Graph classic)
+7. Últimos 20 eventos críticos (Problem events)
+8. Disponibilidad de servicios (Single statistic)
+9. Estado de proxies (Map - navigation tree)
+10. SLA semanal (SLA report widget)</code></pre>
+
+            <h3>Gráficos avanzados</h3>
+            <pre><code># Graph classic - Comparativa de CPU
+Items: system.cpu.util[system,user], system.cpu.util[system,system],
+       system.cpu.util[system,iowait]
+Tipo: apilado (stacked)
+Eje Y: 0-100%
+Color: #3b82f6, #22c55e, #ef4444
+
+# Graph - Tráfico de Red
+Items: net.if.in[eth0,bytes], net.if.out[eth0,bytes]
+Tipo: línea
+Unidad: bits/s (aplicar *8 en preprocessing)
+Umbral: 1Gbps línea de referencia</code></pre>
+
+            <h3>Mapas de red</h3>
+            <p>Los mapas permiten visualizar topologías con estado en tiempo real:</p>
+            <pre><code>Monitoring → Maps → Create map
+Name: Topología Red Producción
+
+- Añadir iconos de servidores, switches, firewalls
+- Conectar con enlaces (líneas)
+- Configurar label para mostrar tráfico:
+  Enlace SW-CORE → WEB-PROD-01:
+    Label: {host:net.if.in[ge0,bytes].last()} / {host:net.if.out[ge0,bytes].last()}
+- Color de icono según estado (automático)</code></pre>
+
+            <h3>Reportes de SLA</h3>
+            <pre><code>Reports → SLA → Create SLA
+Name: SLA Servicios Críticos
+Periodo: Mensual
+Horario: 24x7 (o 8x5 para servicios ofimáticos)
+
+Indicadores (SLIs):
+  Disponibilidad HTTP: 99.9%
+  Latencia MySQL &lt; 500ms: 99.5%
+  Ping &lt; 50ms: 99.8%
+
+SLO: 99.9%
+
+Reporte automático:
+  Enviar primer día de cada mes a gerencia vía email</code></pre>
+
+            <h2>9. Caso Práctico: Monitoreo Completo de un Servidor Web</h2>
+            <p>Vamos a construir el monitoreo integral de un servidor web Linux que ejecuta Nginx, MySQL y una aplicación PHP. Este es un escenario real que cubre las capas de infraestructura, aplicación y red.</p>
+
+            <h3>Template combinado: "Template Web Server Full Stack"</h3>
+            <pre><code>--- Items ---
+# Sistema Operativo
+CPU utilization (5min avg):          system.cpu.util[all,avg5]
+Memory available:                    vm.memory.size[available]
+Disk / utilization:                  vfs.fs.size[/,pused]
+Disk /var/log utilization:           vfs.fs.size[/var/log,pused]
+Disk /var/lib/mysql utilization:     vfs.fs.size[/var/lib/mysql,pused]
+Network throughput eth0 in:          net.if.in[eth0,bytes]
+Network throughput eth0 out:         net.if.out[eth0,bytes]
+
+# Nginx
+Nginx active connections:            web.page.get["http://localhost/nginx_status"]
+Nginx requests per second:           web.page.get["http://localhost/nginx_status"]
+Nginx accepted connections (total):  web.page.get["http://localhost/nginx_status"]
+
+# MySQL
+MySQL uptime:                        mysql.uptime
+MySQL active connections:            mysql.active_connections
+MySQL queries per second:            mysql.qps
+MySQL slow queries:                  mysql.slow_queries
+MySQL replication lag (slave):       mysql.replication_lag
+MySQL InnoDB buffer pool hitrate:    mysql.innodb.buffer_pool_hit_rate
+
+# Aplicación - Health Check
+App health endpoint:                 web.page.get["http://localhost/health"]
+App response time:                   web.page.get["http://localhost/health"]
+App database connection test:        web.page.get["http://localhost/db-check"]
+
+# Red
+ICMP ping latency:                   icmppingsec
+Packet loss:                         icmppingloss</code></pre>
+
+            <h3>Triggers críticos</h3>
+            <pre><code># Críticos (severidad: Disaster)
+CPU > 95% por 10 minutos:
+  avg(/host/system.cpu.util[all,avg5],10m) > 95
+
+Memoria disponible < 512MB:
+  last(/host/vm.memory.size[available]) < 536870912
+
+Disk / 100% (root):
+  last(/host/vfs.fs.size[/,pused]) > 98
+
+MySQL caído:
+  last(/host/mysql.uptime) < 60
+
+# Altos (severidad: High)
+CPU > 85% por 15 minutos:
+  avg(/host/system.cpu.util[all,avg5],15m) > 85
+
+Disk / > 90%:
+  last(/host/vfs.fs.size[/,pused]) > 90
+
+Slow queries > 10 en 5 minutos:
+  rate(/host/mysql.slow_queries,5m) > 10
+
+Nginx conexiones > 2000 activas:
+  last(/host/nginx.active_connections) > 2000
+
+# Medios (severidad: Average)
+Disk /var/log > 85%:
+  last(/host/vfs.fs.size[/var/log,pused]) > 85
+
+Replicación MySQL con lag > 30s:
+  last(/host/mysql.replication_lag) > 30
+
+App health endpoint retorna != 200:
+  last(/host/app.health.check) <> 200
+
+Latencia de ping > 100ms:
+  avg(/host/icmppingsec,5m) > 0.100</code></pre>
+
+            <h3>Acciones de alerta para este servidor</h3>
+            <pre><code>--- Acción: "Web Server Critical Alert" ---
+
+Condiciones:
+  Trigger severity >= High
+  Host groups = Web Servers
+
+Operaciones:
+  Enviar Telegram al grupo #sysadmin-alertas
+    Mensaje: 🔴 CRITICAL | {HOST.NAME}
+             {TRIGGER.NAME}
+             Valor actual: {ITEM.VALUE}
+             {EVENT.DATE} {EVENT.TIME}
+
+  Ejecutar script remoto (acción de recuperación):
+    sudo systemctl restart nginx mysql
+    (vía script personalizado en zabbix_agentd.conf:
+     UserParameter=app.restart[*],sudo systemctl restart $1)
+
+  Enviar email a gerencia si no se resuelve en 30 min
+  (usando escalado de etapas)</code></pre>
+
+            <h3>Dashboard específico para el servidor web</h3>
+            <pre><code>Widgets en dashboard "Web Server Prod - Host Single":
+
+Fila 1: Estado general
+- Problem widgets (solo este host)
+- Single statistic: CPU, Memory, Disk, Uptime
+
+Fila 2: Rendimiento
+- Graph: CPU (user/system/iowait) apilado
+- Graph: Memory (total/used/available)
+- Graph: Disk I/O (read/write ops)
+
+Fila 3: Aplicación
+- Graph: Nginx connections (active/waiting)
+- Graph: MySQL QPS y conexiones activas
+- Single statistic: App response time (avg 5m)
+
+Fila 4: Red
+- Graph: Tráfico eth0 (in/out, bits/s)
+- Gauge: Latencia ICMP (ms)</code></pre>
+
+            <h2>10. Mantenimiento y Buenas Prácticas</h2>
+            <p>Un Zabbix mal mantenido puede degradarse hasta volverse inoperante. Estas prácticas garantizan un monitoreo confiable a largo plazo.</p>
+
+            <h3>Housekeeping de base de datos</h3>
+            <p>TimescaleDB gestiona automáticamente la retención mediante políticas de particionado. Configuración recomendada:</p>
+            <pre><code># Políticas de retención (TimescaleDB)
+SELECT add_retention_policy('history', INTERVAL '90 days');
+SELECT add_retention_policy('history_log', INTERVAL '30 days');
+SELECT add_retention_policy('history_str', INTERVAL '90 days');
+SELECT add_retention_policy('history_text', INTERVAL '90 days');
+SELECT add_retention_policy('history_uint', INTERVAL '90 days');
+SELECT add_retention_policy('trends', INTERVAL '3 years');
+SELECT add_retention_policy('trends_uint', INTERVAL '3 years');
+
+# Compresión de chunks viejos (ahorra 80-90% espacio)
+SELECT add_compression_policy('history', INTERVAL '7 days');
+SELECT add_compression_policy('history_uint', INTERVAL '7 days');
+SELECT add_compression_policy('trends', INTERVAL '30 days');
+SELECT add_compression_policy('trends_uint', INTERVAL '30 days');</code></pre>
+
+            <h3>Distribución con Proxies</h3>
+            <pre><code># Recomendaciones por tamaño de infraestructura:
+
+Pequeña (&lt; 100 hosts):
+  Server + DB en mismo servidor (8 vCPU, 16 GB RAM, SSD)
+
+Mediana (100-1000 hosts):
+  Server dedicado (16 vCPU, 32 GB RAM, NVMe)
+  Proxy por región/data center (4 vCPU, 8 GB RAM)
+  PostgreSQL + TimescaleDB en server separado
+
+Grande (1000-10000+ hosts):
+  Server en HA (capa activa-pasiva con keepalived)
+  Múltiples proxies por ubicación geográfica
+  DB clusterizada (Patroni/Repmgr con replicación)
+  Frontend web con balanceador y sesiones persistentes</code></pre>
+
+            <h3>Versionado de Templates</h3>
+            <pre><code># Exportar templates a YAML/XML y versionarlos en Git
+Data Collection → Templates → Export
+
+# Estructura recomendada en repositorio:
+monitoreo/
+├── templates/
+│   ├── linux-base.yaml
+│   ├── web-server-fullstack.yaml
+│   ├── network-snmp.yaml
+│   └── custom-app.yaml
+├── macros/
+│   └── global-macros.yaml
+├── maps/
+│   └── topologia-red.yaml
+└── scripts/
+    └── restart-service.sh
+
+# Importar desde API con curl (automatizable en CI/CD):
+curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $ZABBIX_TOKEN" \
+  -d @template.json \
+  http://monitoring/api_jsonrpc.php</code></pre>
+
+            <h3>Backup strategy</h3>
+            <pre><code># Backup diario de la base de datos (pg_dump con compresión)
+#!/bin/bash
+BACKUP_DIR="/backup/zabbix"
+DATE=$(date +%Y%m%d_%H%M%S)
+DB="zabbix"
+
+pg_dump -h localhost -U zabbix -d $DB \
+  --exclude-table='history*' \
+  --exclude-table='trends*' \
+  --exclude-table='*_history_*' \
+  --exclude-schema='_timescaledb_internal' \
+  -F c -f "$BACKUP_DIR/${DB}_config_${DATE}.dump"
+
+# Los datos históricos se respaldan con menos frecuencia:
+pg_dump -h localhost -U zabbix -d $DB \
+  --data-only -t 'history*' -t 'trends*' \
+  -F c -f "$BACKUP_DIR/${DB}_history_${DATE}.dump"
+
+# Retención: 30 días config, 7 días history
+find $BACKUP_DIR -name "*history*" -mtime +7 -delete
+find $BACKUP_DIR -name "*config_*" -mtime +30 -delete
+
+# Backup de archivos de configuración
+tar czf "$BACKUP_DIR/zabbix_etc_${DATE}.tar.gz" \
+  /etc/zabbix/ /etc/nginx/sites-enabled/zabbix</code></pre>
+
+            <h3>Monitoreo del propio Zabbix</h3>
+            <pre><code># Items internos (Zabbix internal monitoring):
+Server internal items:
+  zabbix[queue] - datos pendientes de procesar
+  zabbix[requiredperformance] - NVP/s requeridos vs reales
+  zabbix[process,busy,poller,%,avg] - % ocupación de procesos
+  zabbix[history_cache,%,used] - uso de history cache
+  zabbix[preprocessing_queue,avg] - cola de preprocessing
+
+# Estos items deben tener triggers alertando si:
+- Queue > 1000 por más de 5 minutos (proxy o server saturado)
+- Requiredperformance > actual (necesitas más recursos)
+- Cache usage > 80% (aumentar CacheSize en zabbix_server.conf)</code></pre>
+
+            <h3>Recomendaciones finales</h3>
+            <ul>
+                <li><strong>Usa macros de host</strong> para parámetros que varían por servidor (umbrales, credenciales SNMP). Nunca hardcodees valores en los templates.</li>
+                <li><strong>Agrupa hosts por función y criticidad</strong>: Production / Staging / Development. Aplica acciones diferentes según el grupo.</li>
+                <li><strong>Documenta los triggers</strong>: usa el campo "Description" y "URL" para enlazar a runbooks.</li>
+                <li><strong>Prueba las alertas</strong>: usa <code>zabbix_get</code> y <code>zabbix_sender</code> para simular métricas y verificar que los triggers se disparen correctamente.</li>
+                <li><strong>Revisa el Performance Check</strong>: <em>Reports → System Information → Performance</em> debe mostrar "Zabbix server is running" con valores verde en cache usage y queue.</li>
+                <li><strong>Actualiza con cuidado</strong>: lee las notas de versión. Zabbix 6.0 LTS → 7.0 LTS requiere migración de base de datos y cambios en templates.</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>Zabbix es una herramienta madura, flexible y gratuita que puede monitorear desde un pequeño servidor hasta infraestructuras de nivel enterprise con decenas de miles de dispositivos. Su combinación de descubrimiento automático, templates reutilizables, alertas multicanal y dashboards personalizables lo convierten en la opción ideal para equipos IT que necesitan visibilidad completa sin depender de licencias costosas.</p>
+            <p>Esta guía ha cubierto desde la instalación en Ubuntu 22.04 con TimescaleDB hasta la creación de un template completo para servidores web, pasando por alertas con Telegram y Slack, descubrimiento automático de hosts, mapas de red y buenas prácticas de mantenimiento. Con estas bases, puedes construir un sistema de monitoreo profesional, escalable y listo para producción.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

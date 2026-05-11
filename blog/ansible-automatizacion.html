@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatización de Infraestructura con Ansible: Guía Práctica | Caprietoj.com</title>
+    <meta name="description" content="Aprende a automatizar la configuración de servidores con Ansible. Playbooks, roles, inventarios y mejores prácticas para infraestructura IT.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; }
+        .hero-inner { max-width: 800px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        .article-content tr:last-child td { border-bottom: none; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            nav { position: relative; }
+            nav .nav-content { flex-wrap: wrap; padding: 12px 16px; }
+            nav .nav-links { display: none; }
+            .article-hero { padding: 80px 16px 40px; }
+            .hero-inner { max-width: 100%; }
+            .category-badge { font-size: 0.75rem; padding: 6px 14px; }
+            .article-title { font-size: 1.6rem; line-height: 1.3; padding: 0 8px; }
+            .article-meta { flex-direction: column; gap: 8px; font-size: 0.85rem; }
+            .featured-image { margin: 0 auto; padding: 0 16px; }
+            .featured-image img { height: 200px; border-radius: 12px; }
+            .article-container { padding: 24px 16px 60px; }
+            .article-content { padding: 24px 20px; border-radius: 16px; }
+            .article-content h2 { font-size: 1.4rem; margin: 32px 0 16px; }
+            .article-content h3 { font-size: 1.15rem; margin: 24px 0 12px; }
+            .article-content p { font-size: 1rem; line-height: 1.7; }
+            .article-content pre { padding: 16px; font-size: 0.8rem; border-radius: 10px; overflow-x: scroll; }
+            .article-content ul, .article-content ol { padding-left: 22px; }
+            .article-content li { font-size: 0.95rem; }
+            .back-link { font-size: 0.85rem; padding: 10px 16px; margin-bottom: 24px; }
+            footer { padding: 24px 16px; }
+            footer p { font-size: 0.8rem; }
+        }
+        @media (max-width: 480px) {
+            .article-title { font-size: 1.4rem; }
+            .featured-image img { height: 160px; }
+            .article-content { padding: 20px 16px; }
+        }
+        {
+            .nav-links { display: none; }
+            .article-title { font-size: 1.8rem; }
+            .featured-image img { height: 250px; }
+            .article-content { padding: 28px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🐳 DevOps</span>
+            <h1 class="article-title">Automatización de Infraestructura con Ansible: Guía Práctica</h1>
+            <div class="article-meta">
+                <span>📅 Mayo 2024</span>
+                <span>⏱️ 15 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&h=600&fit=crop" alt="Código de automatización Ansible">
+    </div>
+
+    <div class="article-container">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+
+        <div class="article-content">
+            <h2>1. Introducción</h2>
+            <p>La automatización de infraestructura ha pasado de ser un lujo a una necesidad. Gestionar servidores manualmente con SSH no escala: es lento, propenso a errores y no deja trazabilidad. Herramientas como Puppet, Chef y Salt resuelven esto, pero <strong>Ansible</strong> se ha convertido en la opción preferida por su simplicidad y curva de aprendizaje reducida.</p>
+            <p>A diferencia de Puppet (Ruby DSL) o Chef (Ruby puro), Ansible usa <strong>YAML</strong>, legible incluso para quienes no escriben código diariamente. Salt requiere agente en los nodos gestionados; Ansible es <strong>agentless</strong> y funciona puramente sobre SSH. Esto reduce drásticamente la fricción de adopción.</p>
+            <p>En esta guía recorreremos desde la instalación hasta casos prácticos reales, como si estuvieras trabajando codo a codo con un ingeniero senior de infraestructura.</p>
+
+            <h2>2. Arquitectura de Ansible</h2>
+            <p>Entender la arquitectura es clave para diseñar automatizaciones correctas. Ansible sigue un modelo <strong>push-based</strong> sin agentes:</p>
+            <ul>
+                <li><strong>Control node:</strong> Máquina donde se instala Ansible y desde donde se ejecutan los comandos. Puede ser tu laptop, un servidor CI/CD o un bastión.</li>
+                <li><strong>Managed nodes:</strong> Servidores objetivo. Solo necesitan Python 3 y acceso SSH. No instalan ningún agente.</li>
+                <li><strong>Inventory:</strong> Lista de nodos gestionados. Archivos estáticos (INI/YAML) o dinámicos (cloud providers, CMDB).</li>
+                <li><strong>Modules:</strong> Unidades de trabajo. Ansible incluye cientos: <code>copy</code>, <code>service</code>, <code>apt</code>, <code>yum</code>, <code>template</code>, etc.</li>
+                <li><strong>Playbooks:</strong> Archivos YAML que orquestan módulos en secuencia, con condicionales, bucles y handlers.</li>
+            </ul>
+            <pre><code>+----------------+       SSH (22/tcp)       +----------------+
+|                |  --------------------->  |                |
+|  Control Node  |                          |  Managed Node  |
+|  (Ansible)     |  <---------------------  |  (Python 3)    |
+|                |       stdout/stderr      |                |
++----------------+                          +----------------+</code></pre>
+            <p>Ventajas del modelo agentless:</p>
+            <ul>
+                <li>✅ Sin puertos extra que abrir (solo SSH)</li>
+                <li>✅ Sin procesos en segundo plano en los nodos</li>
+                <li>✅ Actualizar Ansible no requiere tocar los nodos gestionados</li>
+                <li>✅ Ideal para entornos efímeros (contenedores, autoscaling)</li>
+            </ul>
+
+            <h2>3. Instalación y Configuración Inicial</h2>
+
+            <h3>Instalación en Ubuntu/Debian</h3>
+            <pre><code>sudo apt update
+sudo apt install -y ansible
+ansible --version</code></pre>
+
+            <h3>Instalación en RHEL/CentOS/Rocky</h3>
+            <pre><code>sudo dnf install -y epel-release
+sudo dnf install -y ansible
+ansible --version</code></pre>
+
+            <h3>Configuración: ansible.cfg</h3>
+            <p>Ansible busca configuración en este orden: <code>ANSIBLE_CONFIG</code> (variable de entorno) &gt; <code>./ansible.cfg</code> &gt; <code>~/.ansible.cfg</code> &gt; <code>/etc/ansible/ansible.cfg</code>. Crea un archivo en tu proyecto:</p>
+            <pre><code>[defaults]
+inventory = ./inventory/hosts
+host_key_checking = False
+forks = 20
+timeout = 30
+stdout_callback = yaml
+callback_whitelist = profile_tasks
+
+[ssh_connection]
+pipelining = True
+control_path = /tmp/ansible-%%h-%%p-%%r</code></pre>
+            <p><strong>pipelining = True</strong> reduce drásticamente el número de conexiones SSH. Obligatorio en entornos con muchos nodos.</p>
+
+            <h3>Inventario estático</h3>
+            <pre><code># inventory/hosts
+[webservers]
+web01 ansible_host=192.168.1.10 ansible_user=deploy
+web02 ansible_host=192.168.1.11 ansible_user=deploy
+
+[dbservers]
+db01 ansible_host=192.168.1.20 ansible_user=deploy
+
+[monitoring]
+monitor ansible_host=192.168.1.30
+
+[production:children]
+webservers
+dbservers</code></pre>
+
+            <h3>Inventario dinámico con AWS EC2</h3>
+            <pre><code># inventory/aws_ec2.yml
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+  - us-west-2
+filters:
+  tag:Environment: production
+hostnames:
+  - dns-name
+  - private-ip
+keyed_groups:
+  - key: tags.Role
+    prefix: role
+compose:
+  ansible_user: "'ec2-user'"</code></pre>
+            <p>Se ejecuta con <code>ansible-inventory -i inventory/aws_ec2.yml --graph</code>. Los inventarios dinámicos se integran con cualquier proveedor que tenga API: AWS, GCP, Azure, VMware, OpenStack.</p>
+
+            <h2>4. Comandos Ad-Hoc</h2>
+            <p>Los comandos ad-hoc ejecutan tareas sin playbook. Ideales para diagnósticos rápidos y operaciones puntuales.</p>
+
+            <h3>Ping de conectividad</h3>
+            <pre><code>ansible all -i inventory/hosts -m ping</code></pre>
+
+            <h3>Ejecutar comandos remotos</h3>
+            <pre><code>ansible webservers -m shell -a "uptime && free -h && df -h"</code></pre>
+
+            <h3>Copiar archivos</h3>
+            <pre><code>ansible webservers -m copy -a "src=./nginx.conf dest=/etc/nginx/nginx.conf mode=0644"</code></pre>
+
+            <h3>Gestionar servicios</h3>
+            <pre><code>ansible dbservers -m service -a "name=postgresql state=restarted enabled=yes"</code></pre>
+
+            <h3>Gestionar usuarios</h3>
+            <pre><code>ansible all -m user -a "name=jdoe state=present groups=sudo shell=/bin/bash create_home=yes"</code></pre>
+
+            <h3>Instalar paquetes</h3>
+            <pre><code>ansible webservers -m apt -a "name=nginx state=latest update_cache=yes" -b</code></pre>
+
+            <p>Usa <code>-b</code> (become) para escalar privilegios. Combínalo con <code>--become-user=</code> si necesitas un usuario específico.</p>
+
+            <h2>5. Playbooks</h2>
+            <p>Los playbooks son el corazón de Ansible. Definen el estado deseado del sistema en YAML puro.</p>
+
+            <h3>Sintaxis básica</h3>
+            <pre><code>---
+- name: Configurar servidor web
+  hosts: webservers
+  become: yes
+  vars:
+    app_port: 3000
+    app_env: production
+
+  tasks:
+    - name: Instalar Nginx
+      apt:
+        name: nginx
+        state: latest
+        update_cache: yes
+
+    - name: Crear directorio de la aplicación
+      file:
+        path: /var/www/miapp
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Desplegar configuración de Nginx
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/sites-available/miapp
+      notify: reload nginx</code></pre>
+
+            <h3>Handlers</h3>
+            <p>Los handlers solo se ejecutan si una tarea notifica el cambio, evitando reinicios innecesarios:</p>
+            <pre><code>  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded</code></pre>
+
+            <h3>Variables y Facts</h3>
+            <p>Ansible recopila <strong>facts</strong> del sistema automáticamente (IP, SO, memoria, discos). Puedes definir variables en varios niveles:</p>
+            <pre><code># group_vars/webservers.yml
+---
+nginx_port: 443
+ssl_enabled: true
+upstream_servers:
+  - 10.0.1.10
+  - 10.0.1.11</code></pre>
+            <pre><code># host_vars/web01.yml
+---
+ansible_host: 192.168.1.10
+app_version: 2.5.1</code></pre>
+            <p>Usa facts en tus templates:</p>
+            <pre><code># templates/index.html.j2
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h1&gt;Servidor: {{ ansible_hostname }}&lt;/h1&gt;
+  &lt;p&gt;IP: {{ ansible_default_ipv4.address }}&lt;/p&gt;
+  &lt;p&gt;SO: {{ ansible_distribution }} {{ ansible_distribution_version }}&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+            <h3>Condicionales</h3>
+            <pre><code>    - name: Configurar firewall en Ubuntu
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+      loop:
+        - 80
+        - 443
+      when: ansible_os_family == "Debian"
+
+    - name: Configurar firewall en RHEL
+      firewalld:
+        service: "{{ item }}"
+        permanent: yes
+        state: enabled
+      loop:
+        - http
+        - https
+      when: ansible_os_family == "RedHat"</code></pre>
+
+            <h3>Bucles</h3>
+            <pre><code>    - name: Crear usuarios del sistema
+      user:
+        name: "{{ item.username }}"
+        groups: "{{ item.groups | default('users') }}"
+        shell: "{{ item.shell | default('/bin/bash') }}"
+        state: present
+      loop:
+        - { username: 'alice', groups: 'sudo' }
+        - { username: 'bob', groups: 'docker' }
+        - { username: 'charlie' }</code></pre>
+
+            <h2>6. Roles y Estructura de Proyectos</h2>
+            <p>Un rol encapsula tareas, handlers, templates, variables y defaults en una estructura reutilizable. Es el equivalente a un "módulo" en Puppet o una "cookbook" en Chef.</p>
+
+            <h3>Estructura estándar</h3>
+            <pre><code>roles/
+  nginx/
+    defaults/        # Variables por defecto (baja prioridad)
+      main.yml
+    vars/            # Variables sobreescribibles
+      main.yml
+    tasks/           # Tareas principales
+      main.yml
+    handlers/        # Handlers del rol
+      main.yml
+    templates/       # Templates Jinja2
+      nginx.conf.j2
+    files/           # Archivos estáticos
+      index.html
+    meta/            # Dependencias del rol
+      main.yml</code></pre>
+
+            <h3>Crear un rol con ansible-galaxy</h3>
+            <pre><code>ansible-galaxy init roles/nginx
+ansible-galaxy init roles/postgresql
+ansible-galaxy init roles/monitoring</code></pre>
+
+            <h3>Playbook consumiendo roles</h3>
+            <pre><code>---
+- name: Desplegar servidor web completo
+  hosts: webservers
+  become: yes
+
+  roles:
+    - role: common
+    - role: nginx
+      vars:
+        nginx_port: 443
+        ssl_cert: /etc/ssl/certs/server.crt
+    - role: monitoring
+      when: enable_monitoring | default(false)</code></pre>
+
+            <h3>Ansible Galaxy</h3>
+            <p>Galaxy es el repositorio público de roles. En lugar de escribir un rol desde cero, busca si ya existe uno mantenido por la comunidad:</p>
+            <pre><code>ansible-galaxy install geerlingguy.nginx
+ansible-galaxy install geerlingguy.postgresql
+ansible-galaxy install geerlingguy.firewall</code></pre>
+            <p>Define dependencias en <code>requirements.yml</code>:</p>
+            <pre><code># requirements.yml
+---
+roles:
+  - name: geerlingguy.nginx
+    version: 3.1.4
+  - name: geerlingguy.postgresql
+    version: 3.5.0
+  - name: geerlingguy.certbot
+    version: 5.0.0</code></pre>
+            <pre><code>ansible-galaxy install -r requirements.yml</code></pre>
+
+            <h2>7. Caso Práctico: Despliegue de LAMP Stack</h2>
+            <p>Construyamos un playbook completo que despliega Apache, MySQL y PHP con hardening básico.</p>
+
+            <h3>Estructura del proyecto</h3>
+            <pre><code>lamp-deployment/
+  ansible.cfg
+  inventory/
+    hosts
+    group_vars/
+      webservers.yml
+      dbservers.yml
+  requirements.yml
+  site.yml
+  roles/
+    common/
+    apache/
+    mysql/
+    php/</code></pre>
+
+            <h3>site.yml</h3>
+            <pre><code>---
+- name: Configuración base de todos los servidores
+  hosts: all
+  become: yes
+  roles:
+    - common
+
+- name: Desplegar servidores web Apache + PHP
+  hosts: webservers
+  become: yes
+  roles:
+    - apache
+    - php
+
+- name: Configurar base de datos MySQL
+  hosts: dbservers
+  become: yes
+  roles:
+    - mysql</code></pre>
+
+            <h3>Rol common: hardening base</h3>
+            <pre><code># roles/common/tasks/main.yml
+---
+- name: Actualizar todos los paquetes
+  apt:
+    update_cache: yes
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Instalar herramientas base
+  apt:
+    name:
+      - htop
+      - curl
+      - wget
+      - git
+      - ufw
+      - fail2ban
+      - unattended-upgrades
+    state: present
+
+- name: Configurar unattended-upgrades
+  copy:
+    src: 50unattended-upgrades
+    dest: /etc/apt/apt.conf.d/50unattended-upgrades
+    mode: '0644'
+
+- name: Configurar firewall
+  ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port | default(omit) }}"
+    proto: "{{ item.proto | default('tcp') }}"
+  loop:
+    - { rule: 'allow', port: '22' }
+  when: ansible_os_family == "Debian"</code></pre>
+
+            <h3>Rol apache</h3>
+            <pre><code># roles/apache/tasks/main.yml
+---
+- name: Instalar Apache
+  apt:
+    name: apache2
+    state: latest
+
+- name: Habilitar módulos de seguridad
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - headers
+    - rewrite
+    - ssl
+    - security
+
+- name: Deshabilitar módulos innecesarios
+  apache2_module:
+    name: "{{ item }}"
+    state: absent
+  loop:
+    - autoindex
+    - status
+    - info
+  notify: restart apache
+
+- name: Configurar cabeceras de seguridad
+  template:
+    src: security-headers.conf.j2
+    dest: /etc/apache2/conf-available/security-headers.conf
+  notify: restart apache
+
+- name: Remover banner del servidor
+  lineinfile:
+    path: /etc/apache2/conf-enabled/security.conf
+    regexp: '^ServerTokens'
+    line: 'ServerTokens Prod'
+  notify: restart apache</code></pre>
+
+            <pre><code># roles/apache/handlers/main.yml
+---
+- name: restart apache
+  service:
+    name: apache2
+    state: restarted</code></pre>
+
+            <pre><code># roles/apache/templates/security-headers.conf.j2
+Header always set X-Content-Type-Options "nosniff"
+Header always set X-Frame-Options "DENY"
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"</code></pre>
+
+            <h3>Rol mysql</h3>
+            <pre><code># roles/mysql/tasks/main.yml
+---
+- name: Instalar MySQL
+  apt:
+    name:
+      - mysql-server
+      - python3-mysqldb
+    state: latest
+
+- name: Ejecutar mysql_secure_installation
+  mysql_user:
+    name: root
+    host: "{{ item }}"
+    password: "{{ mysql_root_password }}"
+    check_implicit_admin: yes
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  loop:
+    - 127.0.0.1
+    - ::1
+    - localhost
+
+- name: Eliminar usuario anónimo
+  mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+
+- name: Eliminar base de datos de prueba
+  mysql_db:
+    name: test
+    state: absent
+
+- name: Crear base de datos para la aplicación
+  mysql_db:
+    name: "{{ app_db_name }}"
+    state: present
+
+- name: Crear usuario de aplicación
+  mysql_user:
+    name: "{{ app_db_user }}"
+    password: "{{ app_db_password }}"
+    priv: "{{ app_db_name }}.*:ALL"
+    host: '%'
+    state: present</code></pre>
+
+            <h3>Rol php</h3>
+            <pre><code># roles/php/tasks/main.yml
+---
+- name: Instalar PHP y extensiones
+  apt:
+    name:
+      - php
+      - php-mysql
+      - php-curl
+      - php-gd
+      - php-mbstring
+      - php-xml
+      - php-xmlrpc
+      - libapache2-mod-php
+    state: latest
+  notify: restart apache
+
+- name: Configurar php.ini para producción
+  template:
+    src: php.ini.j2
+    dest: /etc/php/{{ php_version }}/apache2/php.ini
+  notify: restart apache</code></pre>
+
+            <pre><code># roles/php/templates/php.ini.j2
+expose_php = Off
+display_errors = Off
+log_errors = On
+error_reporting = E_ALL & ~E_DEPRECATED & ~E_STRICT
+max_execution_time = 30
+memory_limit = 256M
+post_max_size = 20M
+upload_max_filesize = 20M
+date.timezone = America/Bogota</code></pre>
+
+            <h3>Variables del proyecto</h3>
+            <pre><code># group_vars/all.yml
+---
+mysql_root_password: "{{ vault_mysql_root_password }}"
+app_db_name: miapp
+app_db_user: miapp_user
+app_db_password: "{{ vault_app_db_password }}"
+php_version: 8.3</code></pre>
+
+            <h3>Ejecutar el despliegue completo</h3>
+            <pre><code>ansible-playbook -i inventory/hosts site.yml --ask-vault-pass</code></pre>
+
+            <h2>8. Ansible Vault</h2>
+            <p>Nunca, bajo ninguna circunstancia, subas contraseñas o claves privadas a tu repositorio. Ansible Vault cifra archivos completos o variables individuales.</p>
+
+            <h3>Cifrar un archivo entero</h3>
+            <pre><code>ansible-vault encrypt group_vars/all/vault.yml
+ansible-vault view group_vars/all/vault.yml
+ansible-vault edit group_vars/all/vault.yml
+ansible-vault decrypt group_vars/all/vault.yml</code></pre>
+
+            <h3>Cifrar una variable individual</h3>
+            <pre><code>ansible-vault encrypt_string 'Str0ng!P4ss' --name 'mysql_root_password'</code></pre>
+            <p>Salida:</p>
+            <pre><code>mysql_root_password: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61333931363438373766373036313334643939343861303866646662356162
+          65366339376335306265333464323539356166633138386435653661376239
+          366566383261310a3666386132623066663138373662333935353739376362
+          36376361633938303630346633306664316262623438633638633730663463
+          6137363131353232620a663434313261623163343132633437623965393763
+          6437633239616430376238</code></pre>
+
+            <h3>Integración con CI/CD</h3>
+            <p>Para entornos CI/CD, usa un archivo de contraseñas en lugar de pedirla interactivamente:</p>
+            <pre><code># .vault_pass (NUNCA subir al repo)
+my_secret_vault_password</code></pre>
+            <pre><code>ansible-playbook site.yml --vault-password-file .vault_pass</code></pre>
+            <p>En GitHub Actions, almacena la contraseña como <strong>secret</strong> y pásala con <code>echo "${{ secrets.VAULT_PASS }}" > .vault_pass</code>.</p>
+
+            <h3>Múltiples vaults por entorno</h3>
+            <pre><code>group_vars/
+  production/
+    vault.yml        # Cifrado con vault-pass-prod
+    vars.yml
+  staging/
+    vault.yml        # Cifrado con vault-pass-staging
+    vars.yml</code></pre>
+            <pre><code># ansible.cfg
+[defaults]
+vault_identity_list = production@.vault-pass-prod, staging@.vault-pass-staging</code></pre>
+
+            <h2>9. Integración con CI/CD</h2>
+            <p>Ansible brilla cuando se integra en pipelines automatizados. Aquí no solo desplegamos configuraciones, sino que validamos, probamos y liberamos con trazabilidad.</p>
+
+            <h3>GitHub Actions</h3>
+            <pre><code># .github/workflows/deploy.yml
+name: Deploy Infrastructure
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ansible/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y ansible
+
+      - name: Instalar roles de Galaxy
+        run: ansible-galaxy install -r ansible/requirements.yml
+        working-directory: ./ansible
+
+      - name: Crear vault password
+        run: echo "${{ secrets.VAULT_PASS }}" > .vault_pass
+
+      - name: Check syntax
+        run: ansible-playbook --syntax-check -i inventory/hosts site.yml
+        working-directory: ./ansible
+
+      - name: Dry-run (check mode)
+        run: ansible-playbook -i inventory/hosts site.yml --check --diff
+        working-directory: ./ansible
+
+      - name: Ejecutar despliegue
+        run: ansible-playbook -i inventory/hosts site.yml --vault-password-file .vault_pass
+        working-directory: ./ansible</code></pre>
+
+            <h3>Jenkins Pipeline</h3>
+            <pre><code>// Jenkinsfile
+pipeline {
+    agent any
+    environment {
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
+        VAULT_PASS = credentials('vault-password')
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Install Ansible') {
+            steps {
+                sh 'sudo apt install -y ansible'
+                sh 'ansible-galaxy install -r requirements.yml'
+            }
+        }
+        stage('Syntax Check') {
+            steps {
+                sh 'ansible-playbook --syntax-check -i inventory/hosts site.yml'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'echo "$VAULT_PASS" > .vault_pass'
+                sh 'ansible-playbook -i inventory/hosts site.yml --vault-password-file .vault_pass'
+            }
+        }
+    }
+}</code></pre>
+
+            <h3>AWX / Red Hat Ansible Automation Platform</h3>
+            <p>AWX es la versión open-source del Automation Platform de Red Hat. Proporciona:</p>
+            <ul>
+                <li>Interfaz web para ejecutar playbooks</li>
+                <li>Gestión de credenciales centralizada</li>
+                <li>Programación de ejecuciones (jobs schedules)</li>
+                <li>RBAC (control de acceso basado en roles)</li>
+                <li>Integración con Git, LDAP, logging centralizado</li>
+            </ul>
+            <pre><code># Despliegue rápido de AWX con Docker Compose
+git clone https://github.com/ansible/awx.git
+cd awx/docker-compose
+ansible-playbook -i inventory install.yml</code></pre>
+
+            <h2>10. Buenas Prácticas</h2>
+
+            <h3>Idempotencia</h3>
+            <p>Un playbook es idempotente cuando ejecutarlo N veces produce el mismo resultado. Diseña cada tarea para que verifique el estado antes de actuar:</p>
+            <pre><code>    # MAL: siempre reinicia
+    - name: Reiniciar Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    # BIEN: solo recarga si hay cambios
+    - name: Recargar Nginx
+      service:
+        name: nginx
+        state: reloaded</code></pre>
+
+            <h3>Testing con Molecule</h3>
+            <p>Molecule es el framework de testing para roles Ansible. Aísla el rol en contenedores o VMs y ejecuta pruebas automatizadas:</p>
+            <pre><code>pip install molecule molecule-plugins[docker]
+
+# Iniciar proyecto de testing
+molecule init scenario --driver-name docker
+
+# molecule/default/molecule.yml
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: geerlingguy/docker-ubuntu2404-ansible:latest
+    pre_build_image: true
+provisioner:
+  name: ansible
+verifier:
+  name: ansible</code></pre>
+            <pre><code># Ejecutar pruebas
+molecule create      # Crea contenedores
+molecule converge    # Ejecuta el rol
+molecule verify      # Verifica el estado
+molecule destroy     # Limpia contenedores
+molecule test        # Todo en uno</code></pre>
+
+            <h3>Version Control</h3>
+            <ul>
+                <li>Mantén <strong>ansible/</strong> en el mismo repositorio del proyecto o en uno dedicado</li>
+                <li>Usa <strong>.gitignore</strong> para excluir vault passwords, archivos .retry, inventarios con IPs reales</li>
+                <li>Versiona los roles con <strong>semver</strong> y etiquetas en Git</li>
+                <li>Revisa los playbooks en <strong>pull requests</strong> antes de aplicar</li>
+            </ul>
+
+            <h3>Tagging</h3>
+            <pre><code>---
+- name: Configuración completa
+  hosts: all
+  tasks:
+    - name: Instalar paquetes base
+      apt:
+        name: "{{ item }}"
+      loop:
+        - curl
+        - git
+      tags:
+        - packages
+        - base
+
+    - name: Configurar SSH
+      template:
+        src: sshd_config.j2
+        dest: /etc/ssh/sshd_config
+      tags:
+        - ssh
+        - security
+
+    - name: Configurar firewall
+      ufw:
+        rule: allow
+        port: 22
+      tags:
+        - firewall
+        - security</code></pre>
+            <pre><code># Ejecutar solo tareas específicas
+ansible-playbook site.yml --tags security
+ansible-playbook site.yml --tags packages --skip-tags security</code></pre>
+
+            <h3>Checklist de código limpio</h3>
+            <table>
+                <tr><th>Práctica</th><th>Descripción</th></tr>
+                <tr><td>✅ Nombres descriptivos</td><td><code>Instalar dependencias de Python</code> vs <code>Task 1</code></td></tr>
+                <tr><td>✅ Usar módulos, no shell/command</td><td>Prefiere <code>copy</code> sobre <code>shell: cp</code></td></tr>
+                <tr><td>✅ Variables con defaults</td><td>Siempre define valores por defecto en <code>defaults/main.yml</code></td></tr>
+                <tr><td>✅ Secrets en Vault</td><td>Nunca texto plano en vars</td></tr>
+                <tr><td>✅ Idempotencia</td><td>Verifica estado, no asumas</td></tr>
+                <tr><td>✅ Testing</td><td>Molecule + linting (ansible-lint)</td></tr>
+                <tr><td>✅ Documentación</td><td>Cada rol con README describiendo variables y uso</td></tr>
+            </table>
+
+            <h2>Conclusión</h2>
+            <p>Ansible es mucho más que "SSH con esteroides". Es una plataforma de automatización que, bien utilizada, permite gestionar desde un puñado de servidores hasta flotas completas en la nube con consistencia, trazabilidad y seguridad.</p>
+            <p>La clave está en empezar simple: inventario, algunos ad-hoc, un playbook pequeño. Luego roles, vault, CI/CD y testing. No intentes abarcar todo el ecosistema el primer día. Cada capa que agregues resolverá problemas reales de tu día a día como ingeniero de infraestructura.</p>
+            <p>El código de esta guía está listo para adaptar a tu entorno. La automatización no es el destino, es el camino.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>

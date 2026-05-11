@@ -167,18 +167,866 @@ networks:
   backend:
     driver: bridge</code></pre>
 
-            <h2>Buenas Prácticas</h2>
+            <h2>1. Seguridad en Contenedores</h2>
+            <p>La seguridad es la asignatura pendiente de muchos despliegues Docker en producción. Un contenedor no es una máquina virtual: comparte el kernel del host, lo que amplía la superficie de ataque si no se toman las precauciones adecuadas.</p>
+
+            <h3>Docker Bench Security</h3>
+            <p>Docker Bench Security es un script oficial que audita tu configuración contra el <em>CIS Docker Benchmark</em>. Evalúa cientos de controles: desde permisos del socket Docker hasta configuración del daemon y hardening del contenedor.</p>
+            <pre><code># Ejecutar Docker Bench Security (desde el host)
+docker run --rm --net host \
+  -v /etc:/etc:ro \
+  -v /usr/bin/containerd:/usr/bin/containerd:ro \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  aquasec/docker-bench-security</code></pre>
+            <p>Revisa las secciones marcadas como <strong>WARN</strong> y aplícalas una por una. Un CI/CD pipeline debería fallar si el score baja de cierto umbral.</p>
+
+            <h3>Escaneo de Vulnerabilidades con Trivy y Grype</h3>
+            <p>Escanea todas tus imágenes en busca de CVEs conocidos antes de desplegar. Integra el escaneo en tu pipeline de CI/CD.</p>
+            <pre><code># Trivy — escaneo rápido y completo
+trivy image mi-app:latest
+
+# Escaneo con salida JSON para integración
+trivy image --format json --output report.json mi-app:latest
+
+# Grype — alternativa con Syft para SBOM
+grype mi-app:latest
+
+# Generar SBOM con Syft
+syft mi-app:latest -o spdx-json > bom.spdx.json</code></pre>
+            <p>Configura un gate de calidad: si se detectan vulnerabilidades <strong>CRITICAL</strong> o <strong>HIGH</strong>, el pipeline debe fallar antes de publicar la imagen al registry.</p>
+
+            <h3>Non-Root y Read-Only Root Filesystem</h3>
+            <p>Nunca ejecutes contenedores como root. Si un atacante escala dentro del contenedor, tener acceso root dentro del mismo (aunque esté limitado por namespaces) facilita escapes. Combínalo con un sistema de archivos raíz de solo lectura:</p>
+            <pre><code># Dockerfile seguro
+FROM python:3.12-slim
+
+RUN addgroup --system --gid 1001 appgroup \
+    && adduser --system --uid 1001 --gid 1001 appuser
+
+WORKDIR /app
+COPY --chown=appuser:appgroup . .
+
+USER appuser
+
+# Read-only + tmpfs para escritura temporal
+# docker run --read-only --tmpfs /tmp ...
+CMD ["python", "app.py"]</code></pre>
+            <pre><code># docker-compose.yml con read-only y tmpfs
+services:
+  app:
+    image: mi-app:latest
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64M
+      - /run
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE</code></pre>
+            <p>Con <code>read_only: true</code> y <code>tmpfs</code> para directorios temporales, eliminas la posibilidad de que un atacante modifique binarios dentro del contenedor.</p>
+
+            <h2>2. Monitoreo con Prometheus y Grafana</h2>
+            <p>Sin métricas, estás operando a ciegas. El stack Prometheus + Grafana se ha convertido en el estándar de facto para monitorear contenedores en producción.</p>
+
+            <h3>cAdvisor: Métricas de Contenedores</h3>
+            <p>cAdvisor (Container Advisor) expone métricas de CPU, memoria, red y disco de cada contenedor en un formato que Prometheus entiende de forma nativa.</p>
+            <pre><code># Ejecutar cAdvisor como contenedor
+docker run --rm \
+  --name cadvisor \
+  --volume=/:/rootfs:ro \
+  --volume=/var/run:/var/run:ro \
+  --volume=/sys:/sys:ro \
+  --volume=/var/lib/docker/:/var/lib/docker:ro \
+  --publish=8080:8080 \
+  --privileged \
+  gcr.io/cadvisor/cadvisor:latest</code></pre>
+
+            <h3>Prometheus: Recopilación y Almacenamiento</h3>
+            <pre><code># prometheus.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  - job_name: 'docker-engine'
+    static_configs:
+      - targets: ['docker.host.internal:9323']</code></pre>
+            <pre><code># docker-compose para Prometheus + cAdvisor + Grafana
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=changeme
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - "8080:8080"
+    privileged: true
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:
+  grafana-data:</code></pre>
+
+            <h3>Consultas PromQL Esenciales</h3>
+            <pre><code># Uso de CPU por contenedor
+sum(rate(container_cpu_usage_seconds_total{name=~".+"}[5m])) by (name)
+
+# Uso de memoria
+sum(container_memory_usage_bytes{name=~".+"}) by (name)
+
+# IO de disco
+sum(rate(container_fs_io_current{name=~".+"}[5m])) by (name)
+
+# Red recibida/enviada
+sum(rate(container_network_receive_bytes_total{name=~".+"}[5m])) by (name)
+sum(rate(container_network_transmit_bytes_total{name=~".+"}[5m])) by (name)</code></pre>
+
+            <h3>Alertas en Prometheus</h3>
+            <pre><code># alert.rules.yml
+groups:
+  - name: container_alerts
+    rules:
+      - alert: HighMemoryUsage
+        expr: (container_memory_usage_bytes{name=~".+"} / container_spec_memory_limit_bytes{name=~".+"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Contenedor {{ $labels.name }} usando más del 85% de memoria"
+
+      - alert: ContainerDown
+        expr: time() - container_last_seen{name=~".+"} > 60
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Contenedor {{ $labels.name }} no reporta métricas"</code></pre>
+
+            <h2>3. Logging Centralizado</h2>
+            <p>Los logs en producción deben estar centralizados. Si dependes de <code>docker logs</code> en cada servidor, estás perdiendo visibilidad. Tienes dos caminos principales: el stack ELK (Elasticsearch, Logstash, Kibana) o la alternativa más ligera Loki + Grafana.</p>
+
+            <h3>Log Drivers de Docker</h3>
+            <p>Docker soporta múltiples <em>log drivers</em> que determinan cómo se gestionan los logs de los contenedores. El driver por defecto es <code>json-file</code>, pero en producción conviene usar <code>syslog</code>, <code>fluentd</code>, <code>gelf</code> o <code>awslogs</code>.</p>
+            <pre><code># Configuración global del daemon en /etc/docker/daemon.json
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}</code></pre>
+            <pre><code># docker-compose con fluentd como log driver
+services:
+  app:
+    image: mi-app:latest
+    logging:
+      driver: fluentd
+      options:
+        fluentd-address: "localhost:24224"
+        tag: "{{.Name}}"
+        env: "ENVIRONMENT"</code></pre>
+
+            <h3>Stack ELK para Logs de Contenedores</h3>
+            <pre><code># docker-compose para ELK reducido
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elastic-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.0
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+volumes:
+  elastic-data:</code></pre>
+            <pre><code># logstash.conf — pipeline de entrada para logs Docker
+input {
+  tcp {
+    port => 5000
+    codec => json_lines
+  }
+}
+
+filter {
+  if [docker] {
+    mutate {
+      add_field => { "[@metadata][index]" => "docker-logs-%{+YYYY.MM.dd}" }
+    }
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["elasticsearch:9200"]
+    index => "%{[@metadata][index]}"
+  }
+}</code></pre>
+
+            <h3>Loki + Grafana: Alternativa más Ligera</h3>
+            <p>Loki está diseñado específicamente para logs de contenedores. No indexa el contenido del log, solo los metadatos (labels), lo que lo hace mucho más eficiente que Elasticsearch para este caso de uso.</p>
+            <pre><code># docker-compose para Loki + Promtail
+services:
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki-data:/loki
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:latest
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+      - ./promtail-config.yaml:/etc/promtail/config.yaml:ro
+    command: -config.file=/etc/promtail/config.yaml
+    restart: unless-stopped
+
+volumes:
+  loki-data:</code></pre>
+            <pre><code># promtail-config.yaml
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets: ['localhost']
+        labels:
+          job: docker
+          __path__: /var/lib/docker/containers/*/*.log
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            time: time
+            tag: attrs.tag</code></pre>
+
+            <h2>4. Redes Avanzadas</h2>
+            <p>Docker incluye varios drivers de red. En un host simple, <code>bridge</code> es suficiente, pero en entornos multi-host o cuando necesitas control fino de la red, necesitas opciones más avanzadas.</p>
+
+            <h3>Overlay Networks (Docker Swarm)</h3>
+            <p>Las redes overlay permiten que contenedores en diferentes hosts se comuniquen de forma transparente. Funcionan encapsulando el tráfico VXLAN entre nodos.</p>
+            <pre><code># Crear una red overlay (requiere Docker Swarm)
+docker network create \
+  --driver overlay \
+  --attachable \
+  --subnet=10.0.10.0/24 \
+  --gateway=10.0.10.1 \
+  app-net
+
+# Servicios en diferentes hosts conectados a la misma overlay
+docker service create --name app --network app-net --replicas 3 mi-app:latest
+docker service create --name redis --network app-net redis:7-alpine</code></pre>
+
+            <h3>Macvlan: Conecta Contenedores Directamente a la Red Física</h3>
+            <p>Macvlan asigna una dirección MAC única a cada contenedor, haciéndolo aparecer como un dispositivo físico más en la red. Útil para aplicaciones legacy que necesitan su propia IP.</p>
+            <pre><code># Crear red Macvlan
+docker network create \
+  -d macvlan \
+  --subnet=192.168.1.0/24 \
+  --gateway=192.168.1.1 \
+  -o parent=eth0 \
+  macvlan-net
+
+# Ejecutar contenedor con IP específica
+docker run --rm -d \
+  --network macvlan-net \
+  --ip=192.168.1.100 \
+  nginx:alpine</code></pre>
+            <p><strong>Advertencia:</strong> Macvlan no permite comunicación entre el host y los contenedores en la misma red Macvlan. Para eso necesitas un subinterface o usar <code>ipvlan</code>.</p>
+
+            <h3>Service Discovery con DNS de Docker</h3>
+            <p>Docker tiene un DNS interno integrado. Cuando usas redes definidas por usuario, los contenedores pueden resolver el nombre de otros servicios automáticamente.</p>
+            <pre><code># En docker-compose, los nombres de servicio son resolubles
+services:
+  api:
+    image: mi-api:latest
+    networks:
+      - internal
+    environment:
+      - DB_HOST=database  # ← resuelve por DNS interno
+      - REDIS_HOST=cache
+
+  database:
+    image: postgres:16-alpine
+    networks:
+      - internal
+    environment:
+      POSTGRES_DB: myapp
+
+  cache:
+    image: redis:7-alpine
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge</code></pre>
+
+            <h3>Aislamiento y Políticas de Red</h3>
+            <p>Segmenta tus redes para minimizar el impacto de una brecha. Nunca pongas todos los servicios en la misma red.</p>
+            <pre><code># Arquitectura de redes segmentadas
+networks:
+  frontend:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+
+  backend:
+    driver: bridge
+    internal: true  # sin acceso a internet
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+
+  monitoring:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+
+services:
+  nginx:
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.10
+
+  app:
+    networks:
+      frontend:
+        ipv4_address: 172.20.0.20
+      backend:
+        ipv4_address: 172.20.1.10
+
+  database:
+    networks:
+      backend:
+        ipv4_address: 172.20.1.20
+
+  prometheus:
+    networks:
+      monitoring:
+        ipv4_address: 172.20.2.10</code></pre>
+
+            <h2>5. Gestión de Secretos</h2>
+            <p>Nunca hardcodees contraseñas, tokens o API keys en el Dockerfile o en variables de entorno visibles. Docker ofrece varios mecanismos seguros para gestionar secretos.</p>
+
+            <h3>Docker Secrets (Docker Swarm)</h3>
+            <p>En modo Swarm, los secretos se almacenan cifrados en la base de datos interna de Swarm y solo se montan en los contenedores que tienen permiso explícito.</p>
+            <pre><code># Crear secretos desde archivo
+echo "supersecret123" | docker secret create db_password -
+
+# Crear secreto desde stdin
+docker secret create api_key -
+
+# Usar secretos en un servicio
+docker service create \
+  --name app \
+  --secret db_password \
+  --secret api_key \
+  --secret source=ssl_cert,target=/etc/nginx/certs/cert.pem \
+  mi-app:latest</code></pre>
+            <p>Docker monta los secretos como archivos temporales en <code>/run/secrets/</code> dentro del contenedor. Tu aplicación debe leerlos desde allí:</p>
+            <pre><code># Lectura de secretos en Node.js
+const fs = require('fs');
+const dbPassword = fs.readFileSync('/run/secrets/db_password', 'utf8').trim();</code></pre>
+
+            <pre><code># docker-compose con secrets
+services:
+  app:
+    image: mi-app:latest
+    secrets:
+      - db_password
+      - api_key
+    environment:
+      - DB_USER=admin
+      # DB_PASSWORD se lee desde /run/secrets/db_password
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  api_key:
+    file: ./secrets/api_key.txt</code></pre>
+
+            <h3>Variables de Entorno vs. Secret Mounts</h3>
+            <p>Las variables de entorno son frágiles: cualquier proceso dentro del contenedor puede leer <code>/proc/1/environ</code>. Prefiere siempre montar secretos como archivos.</p>
+            <p>Si usas variables de entorno para secretos (por ejemplo en Kubernetes Secrets), considera que quedan visibles en <code>docker inspect</code>, en los logs del proceso y en cualquier dump de memoria.</p>
+
+            <h3>Integración con HashiCorp Vault</h3>
+            <p>Para entornos donde necesitas rotación dinámica de secretos o políticas de acceso granulares, Vault es la solución estándar.</p>
+            <pre><code># docker-compose con Vault
+services:
+  vault:
+    image: hashicorp/vault:latest
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+
+  app:
+    image: mi-app:latest
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: root-token
+      # La app usa Vault API para obtener secretos dinámicamente</code></pre>
+            <pre><code># Ejemplo: obtener secreto de Vault con curl desde app
+# curl -H "X-Vault-Token: $VAULT_TOKEN" \
+#   $VAULT_ADDR/v1/secret/data/db_password
+
+# O usando bibliotecas cliente (Python, Go, Node.js, etc.)
+# pip install hvac
+import hvac
+client = hvac.Client(url='http://vault:8200', token='root-token')
+secret = client.secrets.kv.v1.read_secret('db_password')['data']['value']</code></pre>
+
+            <h2>6. Actualizaciones sin Downtime</h2>
+            <p>Actualizar un servicio en producción no debería significar tiempo de inactividad. Docker Compose y Swarm ofrecen mecanismos integrados para rolling updates, y con Docker Compose puedes implementar estrategias blue-green manualmente.</p>
+
+            <h3>Health Checks</h3>
+            <p>Un health check le dice a Docker cuándo un contenedor está realmente listo para recibir tráfico. Sin esto, los despliegues reemplazan contenedores antes de que la aplicación esté operativa.</p>
+            <pre><code># Health check en Dockerfile
+FROM node:20-alpine
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+
+CMD ["node", "index.js"]</code></pre>
+            <pre><code># Health check en docker-compose (sobrescribe el del Dockerfile)
+services:
+  app:
+    image: mi-app:latest
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      replicas: 3
+      update_config:
+        order: start-first
+        failure_action: rollback</code></pre>
+
+            <h3>Rolling Updates con Docker Compose</h3>
+            <pre><code># docker-compose.yml con rolling updates
+services:
+  web:
+    image: mi-app:${TAG}
+    deploy:
+      replicas: 5
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+      rollback_config:
+        parallelism: 1
+        order: stop-first
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3</code></pre>
+            <pre><code># Despliegue gradual
+export TAG=v2.1.0
+docker stack deploy -c docker-compose.yml mi-stack
+
+# Ver progreso del rolling update
+docker service ps mi-stack_web
+
+# Forzar rollback si algo sale mal
+docker service update --rollback mi-stack_web</code></pre>
+
+            <h3>Blue-Green Deployment</h3>
+            <p>Con Docker Compose puedes implementar blue-green usando dos stacks y un proxy inverso como Nginx o Traefik que conmute el tráfico.</p>
+            <pre><code># Blue (producción activa)
+services:
+  app-blue:
+    image: mi-app:1.0.0
+    container_name: app-blue
+    ports:
+      - "3001:3000"
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx-blue.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - app-blue
+
+networks:
+  app-net:</code></pre>
+            <pre><code># Green (nueva versión)
+services:
+  app-green:
+    image: mi-app:2.0.0
+    container_name: app-green
+    ports:
+      - "3002:3000"
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]</code></pre>
+            <p>Una vez que la versión green pasa todos los health checks, actualizas el upstream de Nginx para apuntar a <code>app-green:3000</code> y recargas la configuración:</p>
+            <pre><code># docker exec nginx nginx -s reload</code></pre>
+
+            <h3>Graceful Shutdown con Señales</h3>
+            <p>Cuando Docker detiene un contenedor, envía <code>SIGTERM</code> y espera un tiempo (por defecto 10s) antes de enviar <code>SIGKILL</code>. Tu aplicación debe manejar <code>SIGTERM</code> para cerrar conexiones activas de forma limpia.</p>
+            <pre><code>// Manejo de SIGTERM en Node.js
+const server = app.listen(3000);
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM recibido. Cerrando conexiones...');
+  server.close(() => {
+    console.log('Servidor detenido.');
+    process.exit(0);
+  });
+});</code></pre>
+            <pre><code># Aumentar el tiempo de gracia en docker-compose
+services:
+  app:
+    image: mi-app:latest
+    stop_grace_period: 60s
+    stop_signal: SIGTERM</code></pre>
+
+            <h2>7. Backup y Restauración de Volúmenes</h2>
+            <p>Los volúmenes Docker almacenan datos de bases de datos, colas, archivos subidos y otros estados críticos. Perderlos puede ser catastrófico. Aquí tienes scripts prácticos para backup y restore.</p>
+
+            <h3>Backup de un Volumen Docker</h3>
+            <pre><code>#!/bin/bash
+# backup-volume.sh — Backup de un volumen Docker a un archivo tar.gz
+
+VOLUME_NAME=$1
+BACKUP_DIR=${2:-./backups}
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_FILE="${BACKUP_DIR}/${VOLUME_NAME}_${TIMESTAMP}.tar.gz"
+
+mkdir -p "$BACKUP_DIR"
+
+docker run --rm \
+  -v "${VOLUME_NAME}":/data:ro \
+  -v "$(pwd)/${BACKUP_DIR}":/backup \
+  alpine:latest \
+  tar czf "/backup/$(basename ${BACKUP_FILE})" -C /data .
+
+echo "✅ Backup completado: ${BACKUP_FILE}"</code></pre>
+            <pre><code># Uso
+chmod +x backup-volume.sh
+./backup-volume.sh postgres_data
+./backup-volume.sh redis_data ./mis-backups</code></pre>
+
+            <h3>Backup Automatizado con Cron</h3>
+            <pre><code>#!/bin/bash
+# automated-backup.sh — Backup automático con rotación
+
+VOLUMES=("postgres_data" "redis_data" "app_uploads")
+BACKUP_DIR="/backups/docker"
+RETENTION_DAYS=30
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+for vol in "${VOLUMES[@]}"; do
+    echo "Respaldando volumen: $vol"
+    docker run --rm \
+        -v "${vol}":/data:ro \
+        -v "${BACKUP_DIR}":/backup \
+        alpine:latest \
+        tar czf "/backup/${vol}_${TIMESTAMP}.tar.gz" -C /data .
+
+    # Verificar que el backup se creó
+    if [ -f "${BACKUP_DIR}/${vol}_${TIMESTAMP}.tar.gz" ]; then
+        echo "  ✅ ${vol} respaldado correctamente"
+    else
+        echo "  ❌ Error al respaldar ${vol}"
+    fi
+done
+
+# Rotación: eliminar backups más antiguos que RETENTION_DAYS
+find "${BACKUP_DIR}" -name "*.tar.gz" -type f -mtime +${RETENTION_DAYS} -delete
+echo "🗑️  Rotación completada. Backups antiguos (>${RETENTION_DAYS} días) eliminados."</code></pre>
+            <pre><code># Programar en crontab (se ejecuta diario a las 3am)
+# 0 3 * * * /path/to/automated-backup.sh >> /var/log/docker-backup.log 2>&1</code></pre>
+
+            <h3>Restauración de un Volumen</h3>
+            <pre><code>#!/bin/bash
+# restore-volume.sh — Restaura un volumen Docker desde un archivo tar.gz
+
+VOLUME_NAME=$1
+BACKUP_FILE=$2
+
+if [ -z "$VOLUME_NAME" ] || [ -z "$BACKUP_FILE" ]; then
+    echo "Uso: $0 <nombre-volumen> <archivo-backup.tar.gz>"
+    exit 1
+fi
+
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "❌ El archivo de backup no existe: ${BACKUP_FILE}"
+    exit 1
+fi
+
+# Verificar si el volumen existe; si no, crearlo
+docker volume inspect "$VOLUME_NAME" &>/dev/null || docker volume create "$VOLUME_NAME"
+
+echo "Restaurando ${VOLUME_NAME} desde ${BACKUP_FILE}..."
+
+docker run --rm \
+  -v "${VOLUME_NAME}":/data \
+  -v "$(pwd)/${BACKUP_FILE}":/backup/restore.tar.gz:ro \
+  alpine:latest \
+  tar xzf /backup/restore.tar.gz -C /data
+
+echo "✅ Restauración completada: ${VOLUME_NAME}"</code></pre>
+            <pre><code># Uso
+./restore-volume.sh postgres_data ./backups/postgres_data_20240315_030000.tar.gz</code></pre>
+
+            <h3>Backup de Bases de Datos con pg_dump</h3>
+            <p>Para bases de datos, un backup a nivel de archivo del volumen no siempre es seguro. Usa las herramientas nativas de la base de datos:</p>
+            <pre><code>#!/bin/bash
+# backup-postgres.sh — Backup lógico de PostgreSQL
+
+CONTAINER_NAME="postgres-prod"
+DB_NAME="myapp"
+DB_USER="admin"
+BACKUP_DIR="./db-backups"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p "$BACKUP_DIR"
+
+docker exec "$CONTAINER_NAME" \
+  pg_dump -U "$DB_USER" -d "$DB_NAME" \
+  --format=custom \
+  --file="/tmp/${DB_NAME}_${TIMESTAMP}.dump" \
+  --verbose
+
+docker cp "${CONTAINER_NAME}:/tmp/${DB_NAME}_${TIMESTAMP}.dump" \
+  "${BACKUP_DIR}/${DB_NAME}_${TIMESTAMP}.dump"
+
+docker exec "$CONTAINER_NAME" rm "/tmp/${DB_NAME}_${TIMESTAMP}.dump"
+
+echo "✅ Backup de PostgreSQL completado: ${DB_NAME}_${TIMESTAMP}.dump"</code></pre>
+
+            <h2>8. Hardening del Host Docker</h2>
+            <p>Un contenedor es tan seguro como el host que lo ejecuta. Hardening del host Docker significa configurar el daemon, el kernel y los mecanismos de seguridad de Linux para minimizar la superficie de ataque.</p>
+
+            <h3>Configuración del Daemon Docker</h3>
+            <p>El archivo <code>/etc/docker/daemon.json</code> permite configurar decenas de opciones de seguridad. Esta es una configuración recomendada para producción:</p>
+            <pre><code>{
+  "icc": false,
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "live-restore": true,
+  "userland-proxy": false,
+  "iptables": true,
+  "ip-forward": true,
+  "ip-masq": true,
+  "bridge": "none",
+  "default-ulimits": {
+    "nofile": {
+      "Name": "nofile",
+      "Hard": 64000,
+      "Soft": 64000
+    }
+  },
+  "experimental": false,
+  "authorization-plugins": [],
+  "tls": true,
+  "tlsverify": true,
+  "tlscacert": "/etc/docker/ca.pem",
+  "tlscert": "/etc/docker/server-cert.pem",
+  "tlskey": "/etc/docker/server-key.pem"
+}</code></pre>
+            <p><strong>Nota:</strong> <code>live-restore: true</code> mantiene los contenedores en ejecución incluso si el daemon Docker se reinicia. <code>icc: false</code> deshabilita la comunicación entre contenedores en la red bridge por defecto.</p>
+
+            <h3>User Namespaces (userns-remap)</h3>
+            <p>User namespaces re-mapean el usuario root del contenedor (UID 0) a un usuario no privilegiado en el host (por ejemplo, UID 100000). Así, incluso si un atacante escapa del contenedor como root, en el host es un usuario sin privilegios.</p>
+            <pre><code># /etc/docker/daemon.json — habilitar user namespaces
+{
+  "userns-remap": "default"
+}</code></pre>
+            <pre><code># Al usar userns-remap, los volúmenes bind mount pueden tener
+# problemas de permisos. Solución: usa el UID re-mapeado
+# ── El usuario nobody (65534) en el contenedor se mapea a
+#     un UID alto en el host.
+# ── Para bind mounts, ajusta el propietario en el host:
+#     chown -R 165534:165534 ./data/</code></pre>
+
+            <h3>Perfiles Seccomp</h3>
+            <p>Seccomp (Secure Computing Mode) restringe las llamadas al sistema que un contenedor puede hacer. Docker incluye un perfil por defecto que bloquea ~44 syscalls peligrosas. Puedes crear perfiles más restrictivos.</p>
+            <pre><code># Perfil seccomp personalizado: bloquear mount y unshare
+echo '{
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "architectures": ["SCMP_ARCH_X86_64"],
+  "syscalls": [
+    {
+      "names": ["mount", "umount2", "unshare", "chroot", "pivot_root"],
+      "action": "SCMP_ACT_ERRNO"
+    },
+    {
+      "names": ["ptrace", "perf_event_open", "bpf"],
+      "action": "SCMP_ACT_ERRNO"
+    }
+  ]
+}' > /etc/docker/seccomp-hardened.json</code></pre>
+            <pre><code># Usar perfil seccomp personalizado
+docker run --rm \
+  --security-opt seccomp=/etc/docker/seccomp-hardened.json \
+  nginx:alpine
+
+# En docker-compose
+services:
+  app:
+    image: mi-app:latest
+    security_opt:
+      - seccomp:/etc/docker/seccomp-hardened.json</code></pre>
+
+            <h3>AppArmor</h3>
+            <p>AppArmor es un módulo de seguridad de Linux (LSM) que asigna perfiles de seguridad a programas. Docker se integra con AppArmor en sistemas Debian/Ubuntu.</p>
+            <pre><code># Ver perfil AppArmor por defecto de Docker
+cat /etc/apparmor.d/docker
+
+# Perfil AppArmor personalizado (/etc/apparmor.d/docker-custom)
+#include <tunables/global>
+profile docker-custom flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+  #include <abstractions/lxc/container-base>
+
+  network,
+  capability,
+  file,
+
+  deny /etc/shadow w,
+  deny /etc/gshadow w,
+  deny @{HOME}/.ssh/ rw,
+  deny /proc/*/mem rw,
+  deny /sys/fs/cgroup/ rw,
+}</code></pre>
+            <pre><code># Cargar y usar perfil AppArmor
+sudo apparmor_parser -r -W /etc/apparmor.d/docker-custom
+
+docker run --rm \
+  --security-opt apparmor=docker-custom \
+  mi-app:latest</code></pre>
+
+            <h3>Resource Limits con Cgroups</h3>
+            <p>Los cgroups (control groups) limitan y aíslan el uso de recursos. Sin límites, un contenedor puede consumir toda la memoria del host y provocar un OOM Kill en otros procesos.</p>
+            <pre><code># Límites estrictos con docker run
+docker run --rm \
+  --memory=512m \
+  --memory-reservation=256m \
+  --memory-swap=768m \
+  --cpus=1.5 \
+  --cpuset-cpus=0,1 \
+  --pids-limit=100 \
+  --blkio-weight=500 \
+  mi-app:latest</code></pre>
+            <pre><code># docker-compose con límites completos
+services:
+  app:
+    image: mi-app:latest
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    oom_kill_disable: false
+    memswap_limit: 768M
+    pids_limit: 100</code></pre>
+
+            <h2>Buenas Prácticas Resumidas</h2>
             <ul>
-                <li>✅ Usa imágenes oficiales minimalistas (alpine)</li>
+                <li>✅ Usa imágenes oficiales minimalistas (alpine, distroless)</li>
                 <li>✅ Nunca ejecutes como root dentro del contenedor</li>
-                <li>✅ Define límites de recursos (CPU, memoria)</li>
-                <li>✅ Configura restart policies</li>
-                <li>✅ Usa redes aisladas entre servicios</li>
-                <li>✅ Escanea imágenes con Trivy o Grype</li>
+                <li>✅ Define límites de recursos (CPU, memoria, PIDs)</li>
+                <li>✅ Configura restart policies (unless-stopped)</li>
+                <li>✅ Usa redes aisladas entre servicios (nada en bridge por defecto)</li>
+                <li>✅ Escanea imágenes con Trivy o Grype en cada build</li>
+                <li>✅ Centraliza logs con Loki + Grafana o ELK</li>
+                <li>✅ Monitorea métricas con Prometheus + Grafana + cAdvisor</li>
+                <li>✅ Implementa health checks en todos los servicios</li>
+                <li>✅ Usa read-only root filesystem + tmpfs para escritura</li>
+                <li>✅ Automatiza backups de volúmenes con rotación</li>
+                <li>✅ Habilita Docker Bench Security en CI/CD</li>
+                <li>✅ Configura live-restore y userns-remap en el daemon</li>
+                <li>✅ Aplica seccomp y AppArmor para reducir syscalls</li>
+                <li>✅ Estrategia de actualización: rolling update o blue-green</li>
+                <li>✅ Gestiona secretos con Docker Secrets o Vault</li>
             </ul>
 
             <h2>Conclusión</h2>
-            <p>Docker en producción no es solo "docker run". Requiere configuración de seguridad, monitoreo, logs centralizados y estrategia de actualización sin downtime.</p>
+            <p>Docker en producción no es solo <code>docker run</code>. Hemos recorrido ocho áreas críticas: seguridad, monitoreo, logging centralizado, redes avanzadas, gestión de secretos, actualizaciones sin downtime, backup de volúmenes y hardening del host. Cada una de estas disciplinas convierte un despliegue frágil en un sistema robusto, observable y seguro.</p>
+            <p>No intentes implementarlo todo el primer día. Empieza por los health checks y límites de recursos, luego añade monitoreo, después logs centralizados, y así sucesivamente. La madurez de operaciones se construye por capas, igual que tus imágenes Docker.</p>
+            <p>Recuerda: en producción, lo barato sale caro. Invertir tiempo en estas prácticas desde el principio te ahorrará madrugadas apagando incendios.</p>
         </div>
     </div>
 
