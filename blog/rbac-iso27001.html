@@ -3,10 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Acceso Basado en Roles (RBAC): Implementación ISO 27001 | Caprietoj.com</title>
-    <meta name="description" content="Diseño e implementación de RBAC según ISO 27001 A.9.2. Ejemplos prácticos con matrices de acceso y revisión periódica.">
+    <title>RBAC: Control de Acceso Basado en Roles según ISO 27001 | Caprietoj.com</title>
+    <meta name="description" content="Implementa un sistema de control de acceso robusto siguiendo las mejores prácticas de ISO 27001 y RBAC.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; }
+        .hero-inner { max-width: 800px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(59, 130, 246, 0.2); color: #93c5fd; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        .article-content tr:last-child td { border-bottom: none; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .article-title { font-size: 1.8rem; }
+            .featured-image img { height: 250px; }
+            .article-content { padding: 28px; }
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -23,87 +62,78 @@
         </div>
     </nav>
 
-    <article class="blog-post">
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🔐 ISO 27001</span>
+            <h1 class="article-title">RBAC: Control de Acceso Basado en Roles según ISO 27001</h1>
+            <div class="article-meta">
+                <span>📅 Marzo 2024</span>
+                <span>⏱️ 7 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&h=600&fit=crop" alt="Control de acceso y seguridad">
+    </div>
+
+    <div class="article-container">
         <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
         
-        <header class="post-header">
-            <span class="post-category">ISO 27001</span>
-            <h1 class="post-title">Control de Acceso Basado en Roles (RBAC): Implementación</h1>
-            <div class="post-meta">
-                <span>📅 Diciembre 2023</span>
-                <span>⏱️ 9 min lectura</span>
-            </div>
-        </header>
-
-        <img src="https://picsum.photos/seed/rbac/1200/600" alt="Seguridad de acceso con credenciales y cerradura" class="post-featured-img">
-
-        <div class="post-content">
+        <div class="article-content">
             <h2>Introducción</h2>
-            <p>El control de acceso es una de las medidas más importantes en seguridad de la información. Según ISO 27001 A.9.2, las organizaciones deben implementar un proceso de gestión de derechos de acceso que garantice que los usuarios tienen únicamente los privilegios necesarios para realizar su trabajo.</p>
+            <p>El control de acceso es uno de los pilares fundamentales de la seguridad de la información. ISO 27001 dedica todo el dominio A.9 al control de acceso, y RBAC (Role-Based Access Control) es el modelo más eficiente para implementarlo.</p>
 
             <h2>¿Qué es RBAC?</h2>
-            <p>Role-Based Access Control (RBAC) es un modelo donde los permisos se asignan a roles, no directamente a usuarios. Los usuarios reciben roles que les otorgan los privilegios necesarios para sus funciones laborales.</p>
+            <p>RBAC asigna permisos a <strong>roles</strong>, no a usuarios individuales. Los usuarios reciben roles según sus responsabilidades. Esto simplifica enormemente la gestión y reduce errores.</p>
 
-            <h2>Diseño de Roles</h2>
-            <p>Define roles basado en funciones laborales, no en personas:</p>
+            <h2>Estructura RBAC</h2>
             <table>
-                <tr><th>Rol</th><th>Descripción</th><th>Acceso típico</th></tr>
-                <tr><td>Administrador TI</td><td>Gestión de infraestructura</td><td>Todos los sistemas, sudo/admin</td></tr>
-                <tr><td>Coordinador Académico</td><td>Gestión de cursos</td><td>Sistema académico, solo lectura en otros</td></tr>
-                <tr><td>Docente</td><td>Enseña y califica</td><td>Sistema académico,仅限于 sus cursos</td></tr>
-                <tr><td>Estudiante</td><td>Aprendizaje</td><td>Portal estudiante, recursos asignados</td></tr>
-                <tr><td>Invitado</td><td>Visitante temporal</td><td>Solo WiFi invitados</td></tr>
+                <tr><th>Componente</th><th>Descripción</th></tr>
+                <tr><td><strong>Usuario</strong></td><td>Persona que accede al sistema</td></tr>
+                <tr><td><strong>Rol</strong></td><td>Conjunto de permisos (ej: Administrador, Editor)</td></tr>
+                <tr><td><strong>Permiso</strong></td><td>Acción específica sobre un recurso</td></tr>
+                <tr><td><strong>Recurso</strong></td><td>Archivo, sistema, API, etc.</td></tr>
             </table>
 
-            <h2>Matriz de Acceso</h2>
-            <p>Documenta qué rol tiene acceso a qué recurso:</p>
-            <pre><code>              | Archivo | Base Datos | Admin Sistema | WiFi
-Administrador |    RW   |     RW     |       RW      |  RW
-Coordinador   |    R   |     R      |       -       |  RW
-Docente       |    -   |     R      |       -       |  RW  
-Estudiante    |    R   |     -      |       -       |  RO
-Invitado      |    -   |     -      |       -       |  RO
-
-RW = Lectura/Escritura, R = Solo lectura, RO = Solo lectura, - = Sin acceso</code></pre>
+            <h2>Roles Típicos en una Empresa</h2>
+            <ul>
+                <li><strong>CEO/Administrador:</strong> Acceso total al sistema</li>
+                <li><strong>Gerente:</strong> Acceso a reportes y métricas</li>
+                <li><strong>Empleado:</strong> Solo a información propia</li>
+                <li><strong>Auditor:</strong> Acceso de solo lectura</li>
+                <li><strong>RH:</strong> Acceso a datos de empleados</li>
+            </ul>
 
             <h2>Implementación en Linux</h2>
-            <pre><code># Crear grupo para cada rol
-sudo groupadd admin-ti
-sudo groupadd coordinadores
-sudo groupadd docentes
+            <pre><code># Crear grupo para el rol
+sudo groupadd rol-desarrollo
 
-# Agregar usuarios a grupos
-sudo usermod -aG admin-ti juan.perez
-sudo usermod -aG coordinadores maria.garcia
+# Agregar usuarios al rol
+sudo usermod -aG rol-desarrollo maria
+sudo usermod -aG rol-desarrollo juan
 
-# Configurar sudo para administradores
-echo "%admin-ti ALL=(ALL) ALL" >> /etc/sudoers
+# Configurar permisos por rol
+sudo mkdir /proyectos/web
+sudo chown root:rol-desarrollo /proyectos/web
+sudo chmod 770 /proyectos/web</code></pre>
 
-# Permisos basados en grupos para archivos
-chgrp admin-ti /srv/datos/admin
-chmod 770 /srv/datos/admin
-
-chgrp coordinadores /srv/datos/coordinacion
-chmod 750 /srv/datos/coordinacion</code></pre>
-
-            <h2>Revisión Periódica</h2>
-            <p>ISO 27001 requiere revisiones periódicas. Programa quarterly reviews:</p>
-            <ol>
-                <li><strong>Validación de roles:</strong> ¿Siguen siendo necesarios?</li>
-                <li><strong>Remover accesos huérfanos:</strong> Usuarios sin rol activo</li>
-                <li><strong>Verificar principio mínimo:</strong> ¿Alguien tiene más de lo necesario?</li>
-                <li><strong>Documentar cambios:</strong> Log de quién tuvo acceso y por qué</li>
-            </ol>
+            <h2>ISO 27001: Controles A.9 Relacionados</h2>
+            <ul>
+                <li><strong>A.9.1.1:</strong> Política de control de acceso</li>
+                <li><strong>A.9.2.1:</strong> Registro y baja de usuarios</li>
+                <li><strong>A.9.2.2:</strong> Asignación de privilegios</li>
+                <li><strong>A.9.4.1:</strong> Restricción de acceso a información</li>
+                <li><strong>A.9.4.3:</strong> Control de contraseñas</li>
+            </ul>
 
             <h2>Conclusión</h2>
-            <p>RBAC no es un proyecto de una vez. Es un proceso continuo de gestión de acceso. Implementa la matriz de roles, automatiza la asignación donde sea posible, y revisa regularmente. Esto no solo cumple ISO 27001 sino que reduce significativamente tu superficie de ataque.</p>
+            <p>RBAC no es solo una buena práctica de ISO 27001 — es una necesidad operacional. Facilita auditorías, reduce errores y hace la gestión de acceso escalable.</p>
         </div>
-    </article>
+    </div>
 
     <footer>
-        <div class="container">
-            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
-        </div>
+        <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
     </footer>
 </body>
 </html>

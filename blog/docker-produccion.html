@@ -3,10 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docker para Entornos de Producción | Caprietoj.com</title>
-    <meta name="description" content="Guía práctica para usar Docker en entornos de producción. Dockerfile optimizado, Docker Compose, CI/CD con GitHub Actions.">
+    <title>Docker en Producción: Guía Completa para Desarrolladores | Caprietoj.com</title>
+    <meta name="description" content="Aprende a desplegar contenedores Docker en producción. Configuración de red, volúmenes, Docker Compose y buenas prácticas.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; }
+        .hero-inner { max-width: 800px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .article-title { font-size: 1.8rem; }
+            .featured-image img { height: 250px; }
+            .article-content { padding: 28px; }
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -23,154 +58,104 @@
         </div>
     </nav>
 
-    <article class="blog-post">
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🐳 DevOps</span>
+            <h1 class="article-title">Docker en Producción: Guía Completa para Desarrolladores</h1>
+            <div class="article-meta">
+                <span>📅 Abril 2024</span>
+                <span>⏱️ 10 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=1200&h=600&fit=crop" alt="Contenedores Docker en producción">
+    </div>
+
+    <div class="article-container">
         <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
         
-        <header class="post-header">
-            <span class="post-category">DevOps</span>
-            <h1 class="post-title">Docker para Entornos de Producción: Guía Práctica</h1>
-            <div class="post-meta">
-                <span>📅 Marzo 2024</span>
-                <span>⏱️ 15 min lectura</span>
-            </div>
-        </header>
-
-        <img src="https://picsum.photos/seed/devops/1200/600" alt="Contenedores Docker en producción" class="post-featured-img">
-
-        <div class="post-content">
+        <div class="article-content">
             <h2>Introducción</h2>
-            <p>Docker ha revolucionado la forma en que desplegamos aplicaciones. Pero pasar del desarrollo a producción requiere más que solo containerizar tu app. En esta guía aprenderás las mejores prácticas para usar Docker en entornos de producción.</p>
+            <p>Docker ha revolucionado la forma en que desplegamos aplicaciones. Pero pasar de desarrollo a producción requiere conocimientos adicionales sobre redes, volúmenes, seguridad y orquestación.</p>
 
-            <h2>¿Por qué Docker en Producción?</h2>
+            <h2>Conceptos Fundamentals</h2>
             <ul>
-                <li><strong>Consistencia</strong> - Same environment from dev to prod</li>
-                <li><strong>Aislamiento</strong> - Apps no se pelean entre sí</li>
-                <li><strong>Escalabilidad</strong> - Scale up/down containers easily</li>
-                <li><strong>Rapidez</strong> - Deploy en segundos no minutos</li>
+                <li><strong>Imagen:</strong> Plantilla de solo lectura con el sistema de archivos</li>
+                <li><strong>Contenedor:</strong> Instancia en ejecución de una imagen</li>
+                <li><strong>Volumen:</strong> Datos persistentes sobreviven reinicios</li>
+                <li><strong>Red:</strong> Comunicación entre contenedores</li>
             </ul>
 
             <h2>Dockerfile Optimizado</h2>
-            <p>Un buen Dockerfile usa multi-stage builds para crear imágenes pequeñas y seguras:</p>
-            <pre><code># Usa imagen base ligera
-FROM node:20-alpine AS builder
+            <pre><code># Usa imagen oficial base
+FROM node:20-alpine
+
+# Usa usuario no root para seguridad
+RUN addgroup -g 1001 -S nodejs && adduser -S nodeapp -u 1001
 
 WORKDIR /app
-
-# Copiar solo dependencias primero (mejor caché)
 COPY package*.json ./
 RUN npm ci --only=production
 
-# Copiar código fuente
-COPY . .
+COPY --chown=nodeapp:nodejs . .
 
-# Build de producción
-RUN npm run build
-
-# Imagen final optimizada
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]</code></pre>
+USER nodeapp
+EXPOSE 3000
+CMD ["node", "index.js"]</code></pre>
 
             <h2>Docker Compose para Producción</h2>
-            <p>Docker Compose permite definir y ejecutar aplicaciones multi-contenedor:</p>
             <pre><code>version: '3.8'
 services:
   app:
-    image: tu-app:latest
-    restart: always
+    image: mi-app:latest
+    restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DB_HOST=db
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-  db:
-    image: postgres:15-alpine
-    restart: always
     volumes:
-      - pgdata:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - app-data:/app/data
     networks:
-      - app-network
+      - backend
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - backend
 
 volumes:
-  pgdata:
+  app-data:
+  redis-data:
 
 networks:
-  app-network:
+  backend:
     driver: bridge</code></pre>
 
-            <h2>GitHub Actions CI/CD</h2>
-            <p>Automatiza el build y deploy de tus contenedores:</p>
-            <pre><code>name: Deploy to Docker
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Build Docker image
-        run: |
-          docker build -t tu-app:${{ github.sha }} .
-          
-      - name: Push to Registry
-        run: |
-          echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
-      
-      - name: Deploy
-        run: |
-          ssh ${{ secrets.SERVER_HOST }} "docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}"</code></pre>
-
-            <h2>Monitoreo con Prometheus + Grafana</h2>
-            <p>El monitoreo es crucial en producción. Aquí cómo configurarlo:</p>
-            <pre><code>services:
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}</code></pre>
-
-            <h2>Checklist para Producción</h2>
+            <h2>Buenas Prácticas</h2>
             <ul>
-                <li>✅ Multi-stage build para imágenes pequeñas</li>
-                <li>✅ No usar root dentro del contenedor</li>
-                <li>✅ Health checks definidos</li>
-                <li>✅ Logs centralizados</li>
-                <li>✅ Redes aisladas entre servicios</li>
-                <li>✅ Secrets manejados fuera del contenedor</li>
-                <li>✅ Backups de volúmenes configurados</li>
+                <li>✅ Usa imágenes oficiales minimalistas (alpine)</li>
+                <li>✅ Nunca ejecutes como root dentro del contenedor</li>
+                <li>✅ Define límites de recursos (CPU, memoria)</li>
+                <li>✅ Configura restart policies</li>
+                <li>✅ Usa redes aisladas entre servicios</li>
+                <li>✅ Escanea imágenes con Trivy o Grype</li>
             </ul>
 
             <h2>Conclusión</h2>
-            <p>Docker en producción requiere planificación. Aplica estas prácticas desde el inicio y tendrás una infraestructura robusta y mantenible. Remember: containers are not VMs, they are processes.</p>
+            <p>Docker en producción no es solo "docker run". Requiere configuración de seguridad, monitoreo, logs centralizados y estrategia de actualización sin downtime.</p>
         </div>
-    </article>
+    </div>
 
     <footer>
-        <div class="container">
-            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
-        </div>
+        <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
     </footer>
 </body>
 </html>

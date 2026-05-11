@@ -4,9 +4,48 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diseño de Red para Instituciones Educativas | Caprietoj.com</title>
-    <meta name="description" content="Arquitectura de red escalable para escuelas y universidades. Incluye segmentación, WiFi corporativo, monitoring y redundancia.">
+    <meta name="description" content="Arquitectura de red escalable para escuelas y universidades. Segmentación, WiFi corporativo, monitoring y redundancia.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; }
+        .hero-inner { max-width: 800px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(16, 185, 129, 0.2); color: #6ee7b7; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        .article-content tr:last-child td { border-bottom: none; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .article-title { font-size: 1.8rem; }
+            .featured-image img { height: 250px; }
+            .article-content { padding: 28px; }
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -23,25 +62,29 @@
         </div>
     </nav>
 
-    <article class="blog-post">
-        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
-        
-        <header class="post-header">
-            <span class="post-category">Redes</span>
-            <h1 class="post-title">Diseño de Red para Instituciones Educativas</h1>
-            <div class="post-meta">
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🌐 Redes</span>
+            <h1 class="article-title">Diseño de Red para Instituciones Educativas</h1>
+            <div class="article-meta">
                 <span>📅 Febrero 2024</span>
                 <span>⏱️ 10 min lectura</span>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <img src="https://picsum.photos/seed/network/1200/600" alt="Red de campus universitario" class="post-featured-img">
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1580582932707-520aed937b98?w=1200&h=600&fit=crop" alt="Cableado de red en datacenter">
+    </div>
 
-        <div class="post-content">
+    <div class="article-container">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+        
+        <div class="article-content">
             <h2>Introducción</h2>
-            <p>Las instituciones educativas enfrentan desafíos únicos en infraestructura de red: miles de usuarios simultáneos, dispositivos heterogéneos, requerimientos de seguridad para datos de menores, y presupuestos limitados. En esta guía te comparto cómo diseñar una red escalable y segura para entornos educativos.</p>
+            <p>Las instituciones educativas enfrentan desafíos únicos en infraestructura de red: miles de usuarios simultáneos, dispositivos heterogéneos, requerimientos de seguridad para datos de menores, y presupuestos limitados. En esta guía te comparto cómo diseñar una red escalable y segura.</p>
 
-            <h2>Arquitectura de Red Recomendada</h2>
+            <h2>Arquitectura Jerárquica de Tres Capas</h2>
             <p>Para una institución educativa, recomiendo una topología jerárquica de tres capas:</p>
             <ul>
                 <li><strong>Core Layer:</strong> Switches de alta velocidad para backbone del campus</li>
@@ -50,50 +93,48 @@
             </ul>
 
             <h2>Segmentación de Red</h2>
-            <p>La segmentación es crucial tanto para seguridad como para rendimiento:</p>
-            <pre><code>VLAN 10: Administración (solo personal)
-VLAN 20: Académica (docentes y estudiantes)
-VLAN 30: Invitados (internet only)
-VLAN 40: Laboratorios (requiere reglas específicas)
-VLAN 50: IoT/Sistemas críticos (cámaras, controles)
-VLAN 99: Cuarantine (equipos sospechosos)</code></pre>
+            <p>La segmentación es crítica en entornos educativos:</p>
+            <table>
+                <tr><th>VLAN</th><th>Uso</th><th>Prioridad</th></tr>
+                <tr><td>VLAN 10</td><td>Administrativos</td><td>Alta</td></tr>
+                <tr><td>VLAN 20</td><td>Estudiantes</td><td>Media</td></tr>
+                <tr><td>VLAN 30</td><td>Invitados</td><td>Baja</td></tr>
+                <tr><td>VLAN 40</td><td>Laboratorios</td><td>Alta</td></tr>
+                <tr><td>VLAN 50</td><td>IoT/Seguridad</td><td>Media</td></tr>
+            </table>
 
             <h2>WiFi Corporativo</h2>
-            <p>Para WiFi en instituciones educativas:</p>
+            <pre><code># Configuración VLAN para WiFi
+interface GigabitEthernet0/1
+ description "AP Floor 1"
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30
+!</code></pre>
+
+            <h2> Recomendaciones de Hardware</h2>
             <ul>
-                <li>Usa WPA3-Enterprise si es posible, WPA2-Enterprise mínimo</li>
-                <li>Integración con Active Directory o LDAP para autenticación</li>
-                <li>Cobertura por zona, no por cantidad de APs</li>
-                <li>SSIDs separados: staff, estudiantes, invitados</li>
-                <li>Controller cloud o on-premise para manage</li>
+                <li><strong>Core:</strong> Switch L3 con redundancia (HSTPr)</li>
+                <li><strong>Distribution:</strong> Switches managed con PoE+</li>
+                <li><strong>Access:</strong> APs WiFi 6 (802.11ax)</li>
+                <li><strong>Firewall:</strong> UTM con IDS/IPS integrado</li>
             </ul>
 
-            <h2>Monitoring y Alertas</h2>
-            <p>Para monitoreo recomiendo:</p>
-            <pre><code>Herramientas:
-- Zabbix o Prometheus/Grafana para monitoreo
-- LibreNMS para inventario de red
-- Wireshark para diagnóstico
-- NetFlow/sFlow para análisis de tráfico</code></pre>
-
-            <h2>Redundancia</h2>
-            <p>Para continuidad educativa, la redundancia es clave:</p>
+            <h2>Monitoreo</h2>
+            <p>Recomiendo Zabbix o LibreNMS para monitoreo de red. Métricas clave:</p>
             <ul>
-                <li>Uplinks redundantes entre capas</li>
-                <li>2 proveedores de internet si es posible</li>
-                <li>Generador y UPS para equipos críticos</li>
-                <li>Links backbone en anillo con STP</li>
+                <li>Uptime de equipos</li>
+                <li>Ancho de banda por VLAN</li>
+                <li>Latencia entre capas</li>
+                <li>Alertas de seguridad</li>
             </ul>
 
             <h2>Conclusión</h2>
-            <p>Una buena infraestructura de red es la base para el aprendizaje digital. Invierte en una buena arquitectura desde el inicio y te ahorrará muchos problemas después. Remember: la red es la plataforma sobre la cual corre todo lo demás.</p>
+            <p>Una red educativa bien diseñada no solo mejora la experiencia de aprendizaje sino que protege los datos de estudiantes y cumple con regulaciones de privacidad.</p>
         </div>
-    </article>
+    </div>
 
     <footer>
-        <div class="container">
-            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
-        </div>
+        <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
     </footer>
 </body>
 </html>
