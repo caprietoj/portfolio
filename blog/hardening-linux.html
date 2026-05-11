@@ -6,7 +6,53 @@
     <title>Hardening de Servidores Linux: Mejores Prácticas | Caprietoj.com</title>
     <meta name="description" content="Aprende a proteger tus servidores Linux con las mejores prácticas de hardening. SSH seguro, firewall UFW, fail2ban y más.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../article-styles.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 16px 24px; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; }
+        .nav-links a:hover { color: white; }
+        
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; }
+        .hero-content { max-width: 800px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
+        
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; }
+        .article-content tr:last-child td { border-bottom: none; }
+        
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .article-title { font-size: 1.8rem; }
+            .featured-image img { height: 250px; }
+            .article-content { padding: 28px; }
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -23,8 +69,8 @@
         </div>
     </nav>
 
-    <header class="article-header">
-        <div class="container">
+    <header class="article-hero">
+        <div class="hero-content">
             <span class="category-badge">🛡️ Seguridad</span>
             <h1 class="article-title">Hardening de Servidores Linux: Mejores Prácticas</h1>
             <div class="article-meta">
@@ -35,10 +81,10 @@
     </header>
 
     <div class="featured-image">
-        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=600&fit=crop" alt="Servidor Linux protegido con candado de seguridad">
+        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=600&fit=crop" alt="Servidor Linux protegido">
     </div>
 
-    <div class="article-body">
+    <div class="article-container">
         <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
         
         <div class="article-content">
@@ -46,43 +92,32 @@
             <p>Cada día se reportan miles de ataques a servidores Linux. Los atacantes buscan sistemas mal configurados, contraseñas débiles y servicios expuestos. En esta guía aprenderás a proteger tus servidores Linux como un profesional con años de experiencia en infraestructura IT.</p>
 
             <h2>¿Qué es el Hardening?</h2>
-            <p>Hardening es el proceso de asegurar un sistema reduciendo su superficie de ataque. Cada servicio, puerto y configuración que no es estrictamente necesario representa un riesgo potencial. El objetivo es crear múltiples capas de defensa que protejan tu infraestructura.</p>
+            <p>Hardening es el proceso de asegurar un sistema reduciendo su superficie de ataque. Cada servicio, puerto y configuración que no es estrictamente necesario representa un riesgo potencial.</p>
 
             <h2>Paso a Paso: Hardening de un Servidor Ubuntu</h2>
             
             <h3>1. Actualización Inicial</h3>
-            <p>Antes de cualquier configuración, asegúrate de que todos los paquetes estén actualizados:</p>
-            <pre><code># Actualizar todos los paquetes
-sudo apt update && sudo apt upgrade -y
-
-# Instalar herramientas de seguridad
+            <p>Antes de cualquier configuración, actualiza todos los paquetes:</p>
+            <pre><code>sudo apt update && sudo apt upgrade -y
 sudo apt install -y fail2ban ufw unattended-upgrades</code></pre>
 
             <h3>2. Configuración de SSH</h3>
-            <p>Edita <code>/etc/ssh/sshd_config</code> para hardenear el acceso SSH:</p>
+            <p>Edita <code>/etc/ssh/sshd_config</code>:</p>
             <pre><code>Port 2222                    # Puerto no estándar
 PermitRootLogin no           # No login como root
 PasswordAuthentication no    # Solo llaves SSH
-X11Forwarding no             # Desactivar si no se necesita
-MaxAuthTries 3              # Limitar intentos fallidos
-ClientAliveInterval 300      # Timeout de sesión inactiva</code></pre>
-            <p>Reinicia el servicio SSH para aplicar los cambios:</p>
-            <pre><code>sudo systemctl restart sshd</code></pre>
+MaxAuthTries 3              # Limitar intentos fallidos</code></pre>
 
             <h3>3. Firewall con UFW</h3>
-            <p>Configura un firewall restrictivo que permita solo el tráfico necesario:</p>
-            <pre><code># Configuración básica
-sudo ufw default deny incoming
+            <pre><code>sudo ufw default deny incoming
 sudo ufw default allow outgoing
-sudo ufw allow 2222/tcp      # SSH en puerto personalizado
+sudo ufw allow 2222/tcp      # SSH
 sudo ufw allow 80/tcp        # HTTP
 sudo ufw allow 443/tcp       # HTTPS
 sudo ufw enable</code></pre>
 
-            <h3>4. Protección contra ataques de fuerza bruta</h3>
-            <p>fail2ban bloquea automáticamente IPs que intentan acceder repetidamente:</p>
-            <pre><code># Configurar fail2ban en /etc/fail2ban/jail.local
-[DEFAULT]
+            <h3>4. Protección con fail2ban</h3>
+            <pre><code>[DEFAULT]
 bantime = 3600
 findtime = 600
 maxretry = 3
@@ -90,21 +125,6 @@ maxretry = 3
 [sshd]
 enabled = true
 port = 2222</code></pre>
-
-            <h3>5. Gestión de Usuarios y Permisos</h3>
-            <pre><code># Crear usuario con privilegios sudo
-sudo adduser nuevoadmin
-sudo usermod -aG sudo nuevoadmin
-
-# Configurar acceso SSH solo para ese usuario
-mkdir /home/nuevoadmin/.ssh
-chmod 700 /home/nuevoadmin/.ssh</code></pre>
-
-            <h3>6. Auditoría de Seguridad con Lynis</h3>
-            <p>Lynis analiza tu sistema y te da recomendaciones de seguridad:</p>
-            <pre><code># Instalar y ejecutar Lynis
-sudo apt install lynis -y
-sudo lynis audit system</code></pre>
 
             <h2>Checklist de Hardening</h2>
             <ul>
@@ -114,12 +134,10 @@ sudo lynis audit system</code></pre>
                 <li>✅ Autenticación por llaves SSH</li>
                 <li>✅ Firewall configurado y activo</li>
                 <li>✅ fail2ban protegiendo contra brute force</li>
-                <li>✅ Usuarios limitados con privilegios mínimos</li>
-                <li>✅ Auditoría programada regularmente</li>
             </ul>
 
             <h2>Conclusión</h2>
-            <p>El hardening no es un evento único sino un proceso continuo. Programa auditorías mensuales y mantén registro de los cambios realizados. La seguridad de tus servidores depende de la constancia en estas prácticas.</p>
+            <p>El hardening no es un evento único sino un proceso continuo. Programa auditorías mensuales y mantén registro de los cambios realizados.</p>
         </div>
     </div>
 
