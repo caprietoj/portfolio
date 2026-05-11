@@ -530,4 +530,44 @@
 </div>
 </section>
 
+
+<script>
+// Blog Filter Functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const buttons = document.querySelectorAll('#blog .flex.gap-2 button');
+    const cards = document.querySelectorAll('#blog article');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active state from all buttons
+            buttons.forEach(b => {
+                b.classList.remove('bg-primary', 'text-on-primary');
+                b.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+            });
+            // Add active state to clicked button
+            btn.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+            btn.classList.add('bg-primary', 'text-on-primary');
+            
+            const filter = btn.textContent.trim();
+            
+            cards.forEach(card => {
+                const category = card.querySelector('.absolute.top-4.left-4').textContent.trim();
+                
+                if (filter === 'Todos') {
+                    card.style.display = 'block';
+                } else if (filter === 'Seguridad' && (category === 'Hardening' || category === 'ISO 27001')) {
+                    card.style.display = 'block';
+                } else if (filter === 'Redes' && category === 'Redes') {
+                    card.style.display = 'block';
+                } else if (filter === category) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+
 </body></html>
