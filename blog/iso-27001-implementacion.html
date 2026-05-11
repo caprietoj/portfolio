@@ -6,62 +6,10 @@
     <title>Guía Completa para Implementar ISO 27001 | Caprietoj.com</title>
     <meta name="description" content=" paso a paso para implementar un Sistema de Gestión de Seguridad de la Información (SGSI) basado en ISO 27001.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles.css">
-    <style>
-        .blog-post { padding-top: 100px; }
-        .post-header { text-align: center; margin-bottom: 40px; }
-        .post-category {
-            display: inline-block;
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background: rgba(139, 92, 246, 0.1);
-            color: #8b5cf6;
-            margin-bottom: 16px;
-        }
-        .post-title { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; line-height: 1.2; }
-        .post-meta { display: flex; justify-content: center; gap: 24px; color: var(--text-secondary); margin-bottom: 32px; }
-        .post-featured-img {
-            width: 100%;
-            height: 400px;
-            object-fit: cover;
-            border-radius: 16px;
-            margin-bottom: 40px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-        }
-        .post-content { max-width: 800px; margin: 0 auto; font-size: 1.05rem; line-height: 1.8; }
-        .post-content h2 { font-size: 1.8rem; font-weight: 600; color: var(--primary); margin: 40px 0 20px; }
-        .post-content h3 { font-size: 1.3rem; font-weight: 600; color: var(--primary); margin: 32px 0 16px; }
-        .post-content p { margin-bottom: 20px; color: var(--text-primary); }
-        .post-content pre {
-            background: #0d1117;
-            color: #c9d1d9;
-            padding: 20px;
-            border-radius: 12px;
-            overflow-x: auto;
-            margin: 24px 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        .post-content code { background: var(--bg-alt); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
-        .post-content pre code { background: none; padding: 0; }
-        .post-content ul, .post-content ol { margin: 20px 0; padding-left: 24px; }
-        .post-content li { margin-bottom: 12px; }
-        .post-content table { width: 100%; border-collapse: collapse; margin: 24px 0; }
-        .post-content th, .post-content td { padding: 12px; border: 1px solid var(--border); text-align: left; }
-        .post-content th { background: var(--bg-alt); font-weight: 600; }
-        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-weight: 500; margin-bottom: 24px; padding-top: 24px; }
-        .back-link:hover { text-decoration: underline; }
-        @media (max-width: 768px) {
-            .post-title { font-size: 1.8rem; }
-            .post-featured-img { height: 250px; }
-        }
-    </style>
+    <link rel="stylesheet" href="../article-styles.css">
 </head>
 <body>
-    <nav>
+    <nav class="article-nav">
         <div class="nav-content">
             <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
             <div class="nav-links">
@@ -75,125 +23,94 @@
         </div>
     </nav>
 
-    <article class="blog-post">
-        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
-        
-        <header class="post-header">
-            <span class="post-category">ISO 27001</span>
-            <h1 class="post-title">Guía Completa para Implementar ISO 27001 en tu Organización</h1>
-            <div class="post-meta">
-                <span>📅 Mayo 2024</span>
-                <span>⏱️ 8 min lectura</span>
+    <article class="article-page">
+        <header class="article-hero" style="background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);">
+            <div class="article-hero-content">
+                <span class="article-category-badge">📋 ISO 27001</span>
+                <h1 class="article-hero-title">Guía Completa para Implementar ISO 27001 en tu Organización</h1>
+                <div class="article-hero-meta">
+                    <span>📅 Mayo 2024</span>
+                    <span>⏱️ 8 min lectura</span>
+                </div>
             </div>
         </header>
 
-        <img src="https://picsum.photos/seed/iso27001/1200/600" alt="Seguridad de la información con certificados ISO" class="post-featured-img">
+        <div class="article-image-container">
+            <img src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=1200&h=500&fit=crop" alt="Certificados de seguridad ISO y documentación de gestión" class="article-featured-image">
+        </div>
 
-        <div class="post-content">
-            <h2>Introducción</h2>
-            <p>La norma <strong>ISO 27001</strong> se ha convertido en el estándar global para los Sistemas de Gestión de Seguridad de la Información (SGSI). En un mundo donde las filtraciones de datos cuestan millones y la confianza del cliente depende de la protección de su información, implementar ISO 27001 ya no es opcional para las organizaciones serias.</p>
+        <div class="article-container">
+            <a href="../index.html#blog" class="article-back-link">← Volver al Blog</a>
 
-            <h2>¿Qué es ISO 27001?</h2>
-            <p>ISO 27001 es una norma internacional que establece los requisitos para diseñar, implementar, mantener y mejorar continuamente un Sistema de Gestión de Seguridad de la Información (SGSI).</p>
-            
-            <h3>Beneficios principales:</h3>
-            <ul>
-                <li><strong>Protección de datos</strong> de clientes, empleados y la organización</li>
-                <li><strong>Cumplimiento legal</strong> con regulaciones como Ley de Habeas Data en Colombia</li>
-                <li><strong>Ventaja competitiva</strong> frente a organizaciones sin certificar</li>
-                <li><strong>Reducción de costos</strong> por incidentes de seguridad</li>
-            </ul>
+            <div class="article-body-content">
+                <h2>Introducción</h2>
+                <p>La norma <strong>ISO 27001</strong> se ha convertido en el estándar global para los Sistemas de Gestión de Seguridad de la Información (SGSI). En un mundo donde las filtraciones de datos cuestan millones y la confianza del cliente depende de la protección de su información, implementar ISO 27001 ya no es opcional para las organizaciones serias.</p>
 
-            <h2>Los 14 Dominios del Anexo A</h2>
-            <p>ISO 27001 identifica 14 dominios de control que cubren todos los aspectos de la seguridad:</p>
-            <ol>
-                <li>Políticas de seguridad</li>
-                <li>Organización de la información</li>
-                <li>Seguridad relacionada con recursos humanos</li>
-                <li>Gestión de activos</li>
-                <li>Control de acceso</li>
-                <li>Criptografía</li>
-                <li>Seguridad física y ambiental</li>
-                <li>Seguridad de operaciones</li>
-                <li>Seguridad de comunicaciones</li>
-                <li>Adquisición y mantenimiento de sistemas</li>
-                <li>Relación con proveedores</li>
-                <li>Gestión de incidentes</li>
-                <li>Continuidad del negocio</li>
-                <li>Cumplimiento</li>
-            </ol>
+                <h2>¿Qué es ISO 27001?</h2>
+                <p>ISO 27001 es una norma internacional que establece los requisitos para diseñar, implementar, mantener y mejorar continuamente un Sistema de Gestión de Seguridad de la Información (SGSI).</p>
+                
+                <h3>Beneficios principales:</h3>
+                <ul>
+                    <li><strong>Protección de datos</strong> de clientes, empleados y la organización</li>
+                    <li><strong>Cumplimiento legal</strong> con regulaciones como Ley de Habeas Data en Colombia</li>
+                    <li><strong>Ventaja competitiva</strong> frente a organizaciones sin certificar</li>
+                    <li><strong>Reducción de costos</strong> por incidentes de seguridad</li>
+                </ul>
 
-            <h2>Paso a Paso: Implementación</h2>
+                <h2>Los 14 Dominios del Anexo A</h2>
+                <p>ISO 27001 identifica 14 dominios de control que cubren todos los aspectos de la seguridad. Cada dominio agrupa controles específicos que ayudan a mitigar riesgos particulares.</p>
+                <ol>
+                    <li>Políticas de seguridad de la información</li>
+                    <li>Organización de la información</li>
+                    <li>Seguridad relacionada con recursos humanos</li>
+                    <li>Gestión de activos</li>
+                    <li>Control de acceso</li>
+                    <li>Criptografía</li>
+                    <li>Seguridad física y ambiental</li>
+                    <li>Seguridad de operaciones</li>
+                    <li>Seguridad de comunicaciones</li>
+                    <li>Adquisición y mantenimiento de sistemas</li>
+                    <li>Relación con proveedores</li>
+                    <li>Gestión de incidentes</li>
+                    <li>Continuidad del negocio</li>
+                    <li>Cumplimiento</li>
+                </ol>
 
-            <h3>Paso 1: Análisis de Contexto (Cláusula 4.1)</h3>
-            <p>Identifica qué necesita tu organización:</p>
-            <pre><code>Misión, visión y valores
+                <h2>Paso a Paso: Implementación</h2>
+
+                <h3>Paso 1: Análisis de Contexto (Cláusula 4.1)</h3>
+                <p>Identifica qué necesita tu organización:</p>
+                <pre><code>Misión, visión y valores
 Partes interesadas (clientes, empleados, reguladores)
 Alcance del SGSI
 Requisitos legales y contractuales</code></pre>
 
-            <h3>Paso 2: Evaluación de Riesgos (Cláusula 6.1.2)</h3>
-            <p>El corazón de ISO 27001. Utiliza la metodología NIST:</p>
-            <table>
-                <tr><th>Paso</th><th>Actividad</th></tr>
-                <tr><td>1</td><td>Identificar activos</td></tr>
-                <tr><td>2</td><td>Identificar amenazas</td></tr>
-                <tr><td>3</td><td>Evaluar vulnerabilidades</td></tr>
-                <tr><td>4</td><td>Calcular impacto</td></tr>
-                <tr><td>5</td><td>Determinar nivel de riesgo</td></tr>
-                <tr><td>6</td><td>Seleccionar controles</td></tr>
-            </table>
+                <h3>Paso 2: Evaluación de Riesgos (Cláusula 6.1.2)</h3>
+                <p>El corazón de ISO 27001. Utiliza la metodología NIST:</p>
+                <table>
+                    <tr><th>Paso</th><th>Actividad</th></tr>
+                    <tr><td>1</td><td>Identificar activos</td></tr>
+                    <tr><td>2</td><td>Identificar amenazas</td></tr>
+                    <tr><td>3</td><td>Evaluar vulnerabilidades</td></tr>
+                    <tr><td>4</td><td>Calcular impacto</td></tr>
+                    <tr><td>5</td><td>Determinar nivel de riesgo</td></tr>
+                    <tr><td>6</td><td>Seleccionar controles</td></tr>
+                </table>
 
-            <h3>Paso 3: Selección de Controles (Anexo A)</h3>
-            <p>Los 114 controles se agrupan en los 14 dominios. Selecciona basado en:</p>
-            <ul>
-                <li>Resultados del análisis de riesgos</li>
-                <li>Requisitos legales</li>
-                <li>Capacidades actuales</li>
-                <li>Recursos disponibles</li>
-            </ul>
-
-            <h3>Paso 4: Declaración de Aplicabilidad (SoA)</h3>
-            <p>Documento obligatorio que lista cada control y su aplicabilidad:</p>
-            <pre><code>✓ A.5.1.1 - Políticas de seguridad de la información - APLICABLE
+                <h3>Paso 3: Declaración de Aplicabilidad (SoA)</h3>
+                <p>Documento obligatorio que lista cada control y su aplicabilidad:</p>
+                <pre><code>✓ A.5.1.1 - Políticas de seguridad de la información - APLICABLE
 ✓ A.5.1.2 - Revisión de políticas - APLICABLE
 ✗ A.5.2.1 - Responsabilidad en seguridad - NO APLICABLE</code></pre>
 
-            <h3>Paso 5: Implementación</h3>
-            <ol>
-                <li><strong>Documentar</strong> políticas y procedimientos</li>
-                <li><strong>Capacitar</strong> a todos los empleados</li>
-                <li><strong>Implementar</strong> controles seleccionados</li>
-                <li><strong>Operar</strong> el SGSI día a día</li>
-            </ol>
-
-            <h3>Paso 6: Auditoría Interna</h3>
-            <p>Antes de la certificación, verifica que todo funciona:</p>
-            <pre><code>¿Las políticas están comunicadas?
-¿Los controles están implementados?
-¿Se registran las evidencias?
-¿Hay no conformidades?</code></pre>
-
-            <h3>Paso 7: Auditoría de Certificación</h3>
-            <p>Un organismo certificador externo evaluará tu SGSI. Algunos organismos acreditados incluyen Bureau Veritas, SGS, TÜV, entre otros.</p>
-
-            <h2>Conclusión</h2>
-            <p>Implementar ISO 27001 es un proyecto de 6-12 meses que transformará tu organización. No es solo un "papeleo" sino una forma de pensar la seguridad de manera sistemática y continua.</p>
-            
-            <p><strong>Próximos pasos:</strong></p>
-            <ol>
-                <li>Obtener compromiso de la dirección</li>
-                <li>Definir alcance del SGSI</li>
-                <li>Contratar un consultor con experiencia</li>
-                <li>Asignar recursos (tiempo, presupuesto, personas)</li>
-            </ol>
+                <h2>Conclusión</h2>
+                <p>Implementar ISO 27001 es un proyecto de 6-12 meses que transformará tu organización. No es solo un "papeleo" sino una forma de pensar la seguridad de manera sistemática y continua.</p>
+            </div>
         </div>
     </article>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
-        </div>
+    <footer class="article-footer">
+        <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
     </footer>
 </body>
 </html>

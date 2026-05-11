@@ -6,53 +6,7 @@
     <title>Hardening de Servidores Linux: Mejores Prácticas | Caprietoj.com</title>
     <meta name="description" content="Aprende a proteger tus servidores Linux con las mejores prácticas de hardening. SSH seguro, firewall UFW, fail2ban y más.">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../styles.css">
-    <style>
-        /* Page specific styles */
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
-        nav { background: #0f172a; padding: 16px 24px; position: fixed; width: 100%; top: 0; z-index: 100; }
-        .nav-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
-        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; }
-        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; }
-        .nav-links a:hover { color: white; }
-        
-        /* Article header */
-        .article-header { padding-top: 120px; padding-bottom: 40px; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); color: white; text-align: center; }
-        .article-header .container { max-width: 900px; }
-        .category-badge { display: inline-block; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; }
-        .article-title { font-size: 2.8rem; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
-        .article-meta { display: flex; justify-content: center; gap: 32px; color: rgba(255,255,255,0.7); font-size: 0.95rem; }
-        
-        /* Featured image */
-        .featured-image { width: 100%; max-width: 1200px; margin: 0 auto 48px; padding: 0 24px; }
-        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
-        
-        /* Article content */
-        .article-body { max-width: 800px; margin: 0 auto; padding: 0 24px 80px; }
-        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #e2e8f0; }
-        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #0f172a; margin: 32px 0 16px; }
-        .article-content p { font-size: 1.05rem; line-height: 1.8; color: #475569; margin-bottom: 20px; }
-        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
-        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
-        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 16px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
-        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; color: #0f172a; }
-        .article-content pre code { background: none; padding: 0; color: inherit; }
-        
-        /* Back link */
-        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; margin-bottom: 32px; padding: 12px 20px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); transition: all 0.3s; }
-        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
-        
-        /* Footer */
-        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
-        
-        @media (max-width: 768px) {
-            .article-title { font-size: 1.8rem; }
-            .featured-image img { height: 250px; }
-            .article-content { padding: 28px; }
-            .article-meta { flex-direction: column; gap: 12px; }
-        }
-    </style>
+    <link rel="stylesheet" href="../article-styles.css">
 </head>
 <body>
     <nav>
