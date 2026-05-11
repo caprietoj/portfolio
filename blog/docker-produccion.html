@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker para Entornos de Producción | Caprietoj.com</title>
+    <meta name="description" content="Guía práctica para usar Docker en entornos de producción. Dockerfile optimizado, Docker Compose, CI/CD con GitHub Actions.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .blog-post { padding-top: 100px; }
+        .post-header { text-align: center; margin-bottom: 40px; }
+        .post-category {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(6, 182, 212, 0.1);
+            color: #06b6d4;
+            margin-bottom: 16px;
+        }
+        .post-title { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; line-height: 1.2; }
+        .post-meta { display: flex; justify-content: center; gap: 24px; color: var(--text-secondary); margin-bottom: 32px; }
+        .post-featured-img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .post-content { max-width: 800px; margin: 0 auto; font-size: 1.05rem; line-height: 1.8; }
+        .post-content h2 { font-size: 1.8rem; font-weight: 600; color: var(--primary); margin: 40px 0 20px; }
+        .post-content h3 { font-size: 1.3rem; font-weight: 600; color: var(--primary); margin: 32px 0 16px; }
+        .post-content p { margin-bottom: 20px; color: var(--text-primary); }
+        .post-content pre {
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 24px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .post-content code { background: var(--bg-alt); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
+        .post-content pre code { background: none; padding: 0; }
+        .post-content ul, .post-content ol { margin: 20px 0; padding-left: 24px; }
+        .post-content li { margin-bottom: 12px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-weight: 500; margin-bottom: 24px; padding-top: 24px; }
+        .back-link:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .post-title { font-size: 1.8rem; }
+            .post-featured-img { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="blog-post">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+        
+        <header class="post-header">
+            <span class="post-category">DevOps</span>
+            <h1 class="post-title">Docker para Entornos de Producción: Guía Práctica</h1>
+            <div class="post-meta">
+                <span>📅 Marzo 2024</span>
+                <span>⏱️ 15 min lectura</span>
+            </div>
+        </header>
+
+        <img src="https://images.unsplash.com/photo-1605745341112-85968b19335b?w=1200&h=600&fit=crop" alt="Contenedores Docker en producción" class="post-featured-img">
+
+        <div class="post-content">
+            <h2>Introducción</h2>
+            <p>Docker ha revolucionado la forma en que desplegamos aplicaciones. Pero pasar del desarrollo a producción requiere más que solo containerizar tu app. En esta guía aprenderás las mejores prácticas para usar Docker en entornos de producción.</p>
+
+            <h2>¿Por qué Docker en Producción?</h2>
+            <ul>
+                <li><strong>Consistencia</strong> - Same environment from dev to prod</li>
+                <li><strong>Aislamiento</strong> - Apps no se pelean entre sí</li>
+                <li><strong>Escalabilidad</strong> - Scale up/down containers easily</li>
+                <li><strong>Rapidez</strong> - Deploy en segundos no minutos</li>
+            </ul>
+
+            <h2>Dockerfile Optimizado</h2>
+            <p>Un buen Dockerfile usa multi-stage builds para crear imágenes pequeñas y seguras:</p>
+            <pre><code># Usa imagen base ligera
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copiar solo dependencias primero (mejor caché)
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copiar código fuente
+COPY . .
+
+# Build de producción
+RUN npm run build
+
+# Imagen final optimizada
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]</code></pre>
+
+            <h2>Docker Compose para Producción</h2>
+            <p>Docker Compose permite definir y ejecutar aplicaciones multi-contenedor:</p>
+            <pre><code>version: '3.8'
+services:
+  app:
+    image: tu-app:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=db
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: postgres:15-alpine
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      - app-network
+
+volumes:
+  pgdata:
+
+networks:
+  app-network:
+    driver: bridge</code></pre>
+
+            <h2>GitHub Actions CI/CD</h2>
+            <p>Automatiza el build y deploy de tus contenedores:</p>
+            <pre><code>name: Deploy to Docker
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        run: |
+          docker build -t tu-app:${{ github.sha }} .
+          
+      - name: Push to Registry
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+      
+      - name: Deploy
+        run: |
+          ssh ${{ secrets.SERVER_HOST }} "docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}"</code></pre>
+
+            <h2>Monitoreo con Prometheus + Grafana</h2>
+            <p>El monitoreo es crucial en producción. Aquí cómo configurarlo:</p>
+            <pre><code>services:
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}</code></pre>
+
+            <h2>Checklist para Producción</h2>
+            <ul>
+                <li>✅ Multi-stage build para imágenes pequeñas</li>
+                <li>✅ No usar root dentro del contenedor</li>
+                <li>✅ Health checks definidos</li>
+                <li>✅ Logs centralizados</li>
+                <li>✅ Redes aisladas entre servicios</li>
+                <li>✅ Secrets manejados fuera del contenedor</li>
+                <li>✅ Backups de volúmenes configurados</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>Docker en producción requiere planificación. Aplica estas prácticas desde el inicio y tendrás una infraestructura robusta y mantenible. Remember: containers are not VMs, they are processes.</p>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>

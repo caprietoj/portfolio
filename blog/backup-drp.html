@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backup y Recuperación ante Desastres: Estrategia SLA | Caprietoj.com</title>
+    <meta name="description" content="Cómo diseñar una estrategia de backup que cumpla con RTO y RPO definidos. Incluye 3-2-1 backup, Offsite y testing de recuperación.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .blog-post { padding-top: 100px; }
+        .post-header { text-align: center; margin-bottom: 40px; }
+        .post-category {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            margin-bottom: 16px;
+        }
+        .post-title { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; line-height: 1.2; }
+        .post-meta { display: flex; justify-content: center; gap: 24px; color: var(--text-secondary); margin-bottom: 32px; }
+        .post-featured-img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .post-content { max-width: 800px; margin: 0 auto; font-size: 1.05rem; line-height: 1.8; }
+        .post-content h2 { font-size: 1.8rem; font-weight: 600; color: var(--primary); margin: 40px 0 20px; }
+        .post-content h3 { font-size: 1.3rem; font-weight: 600; color: var(--primary); margin: 32px 0 16px; }
+        .post-content p { margin-bottom: 20px; color: var(--text-primary); }
+        .post-content pre {
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 24px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .post-content ul, .post-content ol { margin: 20px 0; padding-left: 24px; }
+        .post-content li { margin-bottom: 12px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-weight: 500; margin-bottom: 24px; padding-top: 24px; }
+        .back-link:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .post-title { font-size: 1.8rem; }
+            .post-featured-img { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="blog-post">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+        
+        <header class="post-header">
+            <span class="post-category">Seguridad</span>
+            <h1 class="post-title">Backup y Recuperación ante Desastres: Estrategia SLA</h1>
+            <div class="post-meta">
+                <span>📅 Enero 2024</span>
+                <span>⏱️ 6 min lectura</span>
+            </div>
+        </header>
+
+        <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=1200&h=600&fit=crop" alt="Servidor de backup con discos RAID" class="post-featured-img">
+
+        <div class="post-content">
+            <h2>Introducción</h2>
+            <p>¿Qué pasaría si perdiste todos los datos de tu empresa ahora mismo? ¿Cuánto tiempo pasarías sin poder operar? Las respuestas a estas preguntas definen tu estrategia de backup. En este artículo te explico cómo diseñar una estrategia robusta con objetivos medibles.</p>
+
+            <h2>Conceptos Clave: RTO y RPO</h2>
+            <ul>
+                <li><strong>RTO (Recovery Time Objective):</strong> Tiempo máximo para restaurar el servicio. Ejemplo: 4 horas = 4h RTO</li>
+                <li><strong>RPO (Recovery Point Objective):</strong> Máxima pérdida de datos aceptable. Ejemplo: 1 hora = 1h RPO significa que puedes perder hasta 1 hora de datos</li>
+            </ul>
+
+            <h2>La Regla 3-2-1</h2>
+            <p>El estándar de oro para backups:</p>
+            <pre><code>3 copias de tus datos
+2 medios diferentes (disco, cinta, cloud)
+1 copia offsite (en otra ubicación geográfica)</code></pre>
+
+            <h2>Ejemplo de Implementación</h2>
+            <h3>Para un servidor de archivos:</h3>
+            <pre><code>RTO: 4 horas
+RPO: 1 hora
+
+Solución:
+- Backup local diario (disco externo)
+- Backup incremental cada hora a NAS
+- Backup semanal a cloud (AWS S3 o similar)
+- Testing mensual de restauración</code></pre>
+
+            <h3>Script de backup básico:</h3>
+            <pre><code>#!/bin/bash
+# Backup script con rsync + retention
+
+SRCDIR="/datos"
+DESTDIR="/backup local"
+REMOTEDIR="s3://mi-bucket/backups"
+DATE=$(date +%Y%m%d)
+
+# Backup local
+rsync -avz $SRCDIR $DESTDIR/
+
+# Backup a cloud
+aws s3 sync $DESTDIR $REMOTEDIR/$DATE/
+
+# Limpiar backups locales mayores a 30 días
+find $DESTDIR -type d -mtime +30 -exec rm -rf {} \;</code></pre>
+
+            <h2>Testing de Recuperación</h2>
+            <p>Un backup sin testear no existe. Programa pruebas mensuales:</p>
+            <ol>
+                <li>Restaurar archivos individuales (RTO rápido)</li>
+                <li>Restaurar servidor completo en ambiente de pruebas</li>
+                <li>Validar integridad de datos con checksums</li>
+                <li>Documentar tiempo real de restauración</li>
+            </ol>
+
+            <h2>Conclusión</h2>
+            <p>No esperes a perder datos para darte cuenta de que tu estrategia de backup fallaba. Define RTO/RPO realistas, implementa la regla 3-2-1, y testa regularmente. La paz mental no tiene precio.</p>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>

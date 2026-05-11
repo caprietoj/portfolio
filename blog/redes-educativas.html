@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diseño de Red para Instituciones Educativas | Caprietoj.com</title>
+    <meta name="description" content="Arquitectura de red escalable para escuelas y universidades. Incluye segmentación, WiFi corporativo, monitoring y redundancia.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .blog-post { padding-top: 100px; }
+        .post-header { text-align: center; margin-bottom: 40px; }
+        .post-category {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(6, 182, 212, 0.1);
+            color: #06b6d4;
+            margin-bottom: 16px;
+        }
+        .post-title { font-size: 2.5rem; font-weight: 700; color: var(--primary); margin-bottom: 16px; line-height: 1.2; }
+        .post-meta { display: flex; justify-content: center; gap: 24px; color: var(--text-secondary); margin-bottom: 32px; }
+        .post-featured-img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        .post-content { max-width: 800px; margin: 0 auto; font-size: 1.05rem; line-height: 1.8; }
+        .post-content h2 { font-size: 1.8rem; font-weight: 600; color: var(--primary); margin: 40px 0 20px; }
+        .post-content h3 { font-size: 1.3rem; font-weight: 600; color: var(--primary); margin: 32px 0 16px; }
+        .post-content p { margin-bottom: 20px; color: var(--text-primary); }
+        .post-content pre {
+            background: #0d1117;
+            color: #c9d1d9;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 24px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .post-content ul, .post-content ol { margin: 20px 0; padding-left: 24px; }
+        .post-content li { margin-bottom: 12px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); text-decoration: none; font-weight: 500; margin-bottom: 24px; padding-top: 24px; }
+        .back-link:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .post-title { font-size: 1.8rem; }
+            .post-featured-img { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <article class="blog-post">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+        
+        <header class="post-header">
+            <span class="post-category">Redes</span>
+            <h1 class="post-title">Diseño de Red para Instituciones Educativas</h1>
+            <div class="post-meta">
+                <span>📅 Febrero 2024</span>
+                <span>⏱️ 10 min lectura</span>
+            </div>
+        </header>
+
+        <img src="https://images.unsplash.com/photo-1580582932707-520aed937b98?w=1200&h=600&fit=crop" alt="Red de campus universitario" class="post-featured-img">
+
+        <div class="post-content">
+            <h2>Introducción</h2>
+            <p>Las instituciones educativas enfrentan desafíos únicos en infraestructura de red: miles de usuarios simultáneos, dispositivos heterogéneos, requerimientos de seguridad para datos de menores, y presupuestos limitados. En esta guía te comparto cómo diseñar una red escalable y segura para entornos educativos.</p>
+
+            <h2>Arquitectura de Red Recomendada</h2>
+            <p>Para una institución educativa, recomiendo una topología jerárquica de tres capas:</p>
+            <ul>
+                <li><strong>Core Layer:</strong> Switches de alta velocidad para backbone del campus</li>
+                <li><strong>Distribution Layer:</strong> Agregación de edificios o pisos</li>
+                <li><strong>Access Layer:</strong> Switches de piso para usuarios finales</li>
+            </ul>
+
+            <h2>Segmentación de Red</h2>
+            <p>La segmentación es crucial tanto para seguridad como para rendimiento:</p>
+            <pre><code>VLAN 10: Administración (solo personal)
+VLAN 20: Académica (docentes y estudiantes)
+VLAN 30: Invitados (internet only)
+VLAN 40: Laboratorios (requiere reglas específicas)
+VLAN 50: IoT/Sistemas críticos (cámaras, controles)
+VLAN 99: Cuarantine (equipos sospechosos)</code></pre>
+
+            <h2>WiFi Corporativo</h2>
+            <p>Para WiFi en instituciones educativas:</p>
+            <ul>
+                <li>Usa WPA3-Enterprise si es posible, WPA2-Enterprise mínimo</li>
+                <li>Integración con Active Directory o LDAP para autenticación</li>
+                <li>Cobertura por zona, no por cantidad de APs</li>
+                <li>SSIDs separados: staff, estudiantes, invitados</li>
+                <li>Controller cloud o on-premise para manage</li>
+            </ul>
+
+            <h2>Monitoring y Alertas</h2>
+            <p>Para monitoreo recomiendo:</p>
+            <pre><code>Herramientas:
+- Zabbix o Prometheus/Grafana para monitoreo
+- LibreNMS para inventario de red
+- Wireshark para diagnóstico
+- NetFlow/sFlow para análisis de tráfico</code></pre>
+
+            <h2>Redundancia</h2>
+            <p>Para continuidad educativa, la redundancia es clave:</p>
+            <ul>
+                <li>Uplinks redundantes entre capas</li>
+                <li>2 proveedores de internet si es posible</li>
+                <li>Generador y UPS para equipos críticos</li>
+                <li>Links backbone en anillo con STP</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>Una buena infraestructura de red es la base para el aprendizaje digital. Invierte en una buena arquitectura desde el inicio y te ahorrará muchos problemas después. Remember: la red es la plataforma sobre la cual corre todo lo demás.</p>
+        </div>
+    </article>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>
