@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Empresarial: Cómo Conectar tus Documentos con Modelos de IA | Caprietoj.com</title>
+    <meta name="description" content="Aprende qué es RAG, cómo funciona su arquitectura y cómo implementarlo para asistentes internos, búsqueda semántica y automatización documental.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; }
+        .hero-inner { max-width: 820px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(96, 165, 250, 0.18); color: #bfdbfe; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(147, 197, 253, 0.35); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; vertical-align: top; }
+        .article-content tr:last-child td { border-bottom: none; }
+        .note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 18px 20px; border-radius: 12px; margin: 24px 0; color: #1e3a8a; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            nav { position: relative; }
+            nav .nav-content { flex-wrap: wrap; padding: 12px 16px; }
+            nav .nav-links { display: none; }
+            .article-hero { padding: 80px 16px 40px; }
+            .article-title { font-size: 1.6rem; line-height: 1.3; }
+            .article-meta { flex-direction: column; gap: 8px; font-size: 0.85rem; }
+            .featured-image { margin: 0 auto; padding: 0 16px; }
+            .featured-image img { height: 200px; border-radius: 12px; }
+            .article-container { padding: 24px 16px 60px; }
+            .article-content { padding: 24px 20px; border-radius: 16px; }
+            .article-content h2 { font-size: 1.4rem; margin: 32px 0 16px; }
+            .article-content h3 { font-size: 1.15rem; margin: 24px 0 12px; }
+            .article-content p { font-size: 1rem; line-height: 1.7; }
+            .article-content pre { padding: 16px; font-size: 0.8rem; border-radius: 10px; overflow-x: scroll; }
+            .article-content ul, .article-content ol { padding-left: 22px; }
+            .article-content li { font-size: 0.95rem; }
+            .back-link { font-size: 0.85rem; padding: 10px 16px; margin-bottom: 24px; }
+            footer { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🤖 Inteligencia Artificial</span>
+            <h1 class="article-title">RAG Empresarial: Cómo Conectar tus Documentos con Modelos de IA</h1>
+            <div class="article-meta">
+                <span>📅 Mayo 2026</span>
+                <span>⏱️ 11 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&h=600&fit=crop" alt="Equipo analizando documentos y datos para un sistema RAG empresarial">
+    </div>
+
+    <div class="article-container">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+
+        <div class="article-content">
+            <h2>Introducción</h2>
+            <p>Uno de los problemas más comunes al usar modelos de lenguaje en empresas es que responden bien en términos generales, pero no conocen los documentos internos, procedimientos, actas, políticas o bases de conocimiento de la organización. Aquí es donde <strong>RAG (Retrieval Augmented Generation)</strong> se convierte en una arquitectura clave.</p>
+            <p>RAG combina recuperación de información con generación de lenguaje natural. En lugar de confiar solo en el conocimiento preentrenado del modelo, primero busca contenido relevante en tus fuentes documentales y luego genera una respuesta apoyada en ese contexto.</p>
+
+            <div class="note">
+                <strong>Idea central:</strong> RAG no entrena de nuevo el modelo; le entrega contexto confiable justo antes de responder.
+            </div>
+
+            <h2>¿Qué es RAG y por qué importa?</h2>
+            <p>RAG es especialmente útil cuando necesitas respuestas actualizadas, trazables y alineadas con la realidad operativa de la empresa. Por ejemplo:</p>
+            <ul>
+                <li>Asistentes internos de mesa de ayuda</li>
+                <li>Búsqueda semántica en políticas ISO 27001</li>
+                <li>Consulta de manuales técnicos y runbooks DevOps</li>
+                <li>Soporte a áreas legales, RR. HH. o cumplimiento</li>
+            </ul>
+            <p>Sin RAG, el modelo puede alucinar o responder con información genérica. Con RAG, la respuesta se fundamenta en fragmentos recuperados desde una base documental controlada.</p>
+
+            <h2>Arquitectura básica de una solución RAG</h2>
+            <table>
+                <tr><th>Componente</th><th>Función</th></tr>
+                <tr><td>Ingesta documental</td><td>Extrae texto desde PDF, DOCX, HTML, wikis o bases internas.</td></tr>
+                <tr><td>Chunking</td><td>Divide documentos en fragmentos manejables para búsqueda.</td></tr>
+                <tr><td>Embeddings</td><td>Convierte cada fragmento en vectores semánticos.</td></tr>
+                <tr><td>Vector store</td><td>Almacena embeddings y metadatos para recuperar similitud.</td></tr>
+                <tr><td>Retriever</td><td>Encuentra los fragmentos más relevantes ante una pregunta.</td></tr>
+                <tr><td>LLM</td><td>Genera la respuesta final usando el contexto recuperado.</td></tr>
+            </table>
+
+            <h2>Flujo paso a paso</h2>
+            <ol>
+                <li>Recolectas documentos desde tus fuentes confiables.</li>
+                <li>Normalizas y limpias el contenido.</li>
+                <li>Lo divides en fragmentos con metadatos útiles.</li>
+                <li>Generas embeddings y los guardas en una base vectorial.</li>
+                <li>Cuando llega una pregunta, conviertes la consulta en embedding.</li>
+                <li>Buscas los fragmentos más cercanos semánticamente.</li>
+                <li>Envías esos fragmentos al modelo como contexto.</li>
+                <li>El modelo responde con mayor precisión y trazabilidad.</li>
+            </ol>
+
+            <h2>Buenas prácticas de diseño</h2>
+
+            <h3>1. No indexar sin gobernanza</h3>
+            <p>Un error frecuente es indexar todo indiscriminadamente. Si mezclas borradores, documentos obsoletos y archivos sensibles, el asistente terminará devolviendo respuestas inconsistentes o riesgosas.</p>
+            <ul>
+                <li>Define fuentes autorizadas</li>
+                <li>Controla versiones documentales</li>
+                <li>Etiqueta confidencialidad y dueño del documento</li>
+                <li>Excluye información que no deba exponerse al asistente</li>
+            </ul>
+
+            <h3>2. Diseñar bien el chunking</h3>
+            <p>Fragmentos demasiado grandes introducen ruido; fragmentos demasiado pequeños pierden contexto. En entornos empresariales suele funcionar bien dividir por secciones lógicas, títulos o bloques de 300 a 800 tokens con solapamiento moderado.</p>
+
+            <h3>3. Adjuntar metadatos útiles</h3>
+            <p>Los metadatos mejoran filtrado, auditoría y respuesta. Ejemplos: sistema origen, clasificación del documento, fecha de actualización, área responsable y versión.</p>
+
+            <h3>4. Exigir citas o referencias</h3>
+            <p>Si el uso es corporativo, pedir al modelo que cite el documento o sección fuente mejora confianza y facilita validación humana.</p>
+
+            <h2>Ejemplo práctico con Python</h2>
+            <p>El siguiente ejemplo muestra una estructura simplificada para construir un flujo RAG. No es un sistema completo de producción, pero deja claro el patrón de trabajo.</p>
+            <pre><code>from sentence_transformers import SentenceTransformer
+from qdrant_client import QdrantClient
+from openai import OpenAI
+
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+qdrant = QdrantClient(url="http://localhost:6333")
+llm = OpenAI()
+
+def buscar_contexto(pregunta, top_k=4):
+    vector = embedder.encode(pregunta).tolist()
+    resultados = qdrant.search(
+        collection_name="documentos_internos",
+        query_vector=vector,
+        limit=top_k
+    )
+    return [r.payload["texto"] for r in resultados]
+
+def responder(pregunta):
+    contexto = "\n\n".join(buscar_contexto(pregunta))
+    prompt = f"""
+    Responde solo con base en el contexto.
+    Si la respuesta no está en el contexto, indícalo claramente.
+
+    Contexto:
+    {contexto}
+
+    Pregunta:
+    {pregunta}
+    """
+    completion = llm.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    return completion.choices[0].message.content</code></pre>
+
+            <h2>Casos de uso alineados con ISO 27001 y Seguridad</h2>
+            <p>RAG no es solo productividad. También puede fortalecer gobierno de información si se implementa con criterio.</p>
+            <ul>
+                <li><strong>ISO 27001:</strong> consulta rápida de políticas, controles y procedimientos del SGSI</li>
+                <li><strong>Respuesta a incidentes:</strong> acceso guiado a playbooks y matrices de escalamiento</li>
+                <li><strong>Onboarding técnico:</strong> recuperación de runbooks, estándares y arquitectura</li>
+                <li><strong>Auditoría:</strong> trazabilidad de qué documentos respaldan cada respuesta</li>
+            </ul>
+
+            <h2>Riesgos que debes controlar</h2>
+            <table>
+                <tr><th>Riesgo</th><th>Mitigación recomendada</th></tr>
+                <tr><td>Exposición de datos sensibles</td><td>Clasificación, ACL por usuario, cifrado y filtrado por contexto.</td></tr>
+                <tr><td>Uso de documentos obsoletos</td><td>Versionado, fechas de vigencia y reindexación programada.</td></tr>
+                <tr><td>Respuestas no fundamentadas</td><td>Prompting restrictivo, citas obligatorias y fallback a revisión humana.</td></tr>
+                <tr><td>Baja relevancia en búsquedas</td><td>Mejorar chunking, embeddings, reranking y calidad del corpus.</td></tr>
+            </table>
+
+            <h2>Cómo llevarlo a producción</h2>
+            <p>Para un entorno real conviene tratar RAG como un producto interno, no como una demo aislada. Algunas recomendaciones:</p>
+            <ul>
+                <li>Monitorea consultas, latencia y tasa de respuestas útiles</li>
+                <li>Registra feedback del usuario para mejorar recuperación</li>
+                <li>Aplica autenticación y autorización por rol</li>
+                <li>Separa entornos de desarrollo, pruebas y producción</li>
+                <li>Documenta responsables del corpus y ciclos de actualización</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>RAG es una de las formas más efectivas de llevar IA generativa al contexto empresarial sin depender solo del conocimiento general del modelo. Bien implementado, permite respuestas más precisas, auditables y alineadas con seguridad, cumplimiento y operación real.</p>
+            <p>Si tu organización ya tiene políticas, manuales, procedimientos o documentación técnica dispersa, RAG puede convertir ese conocimiento en una interfaz útil y segura para equipos de soporte, seguridad, cumplimiento y DevOps.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 Cristian Andrés Prieto Jiménez. Todos los derechos reservados.</p>
+    </footer>
+</body>
+</html>
