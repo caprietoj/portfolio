@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uso de embeddings para búsqueda semántica en aplicaciones empresariales | Caprietoj.com</title>
+    <meta name="description" content="Aprende qué son los embeddings, cómo funcionan y cómo usarlos para construir búsqueda semántica útil en portales internos, bases documentales y asistentes corporativos.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; }
+        .hero-inner { max-width: 860px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(96, 165, 250, 0.18); color: #bfdbfe; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(147, 197, 253, 0.35); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; vertical-align: top; }
+        .article-content tr:last-child td { border-bottom: none; }
+        .note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 18px 20px; border-radius: 12px; margin: 24px 0; color: #1e3a8a; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            nav { position: relative; }
+            nav .nav-content { flex-wrap: wrap; padding: 12px 16px; }
+            nav .nav-links { display: none; }
+            .article-hero { padding: 80px 16px 40px; }
+            .article-title { font-size: 1.6rem; line-height: 1.3; }
+            .article-meta { flex-direction: column; gap: 8px; font-size: 0.85rem; }
+            .featured-image { margin: 0 auto; padding: 0 16px; }
+            .featured-image img { height: 200px; border-radius: 12px; }
+            .article-container { padding: 24px 16px 60px; }
+            .article-content { padding: 24px 20px; border-radius: 16px; }
+            .article-content h2 { font-size: 1.4rem; margin: 32px 0 16px; }
+            .article-content h3 { font-size: 1.15rem; margin: 24px 0 12px; }
+            .article-content p { font-size: 1rem; line-height: 1.7; }
+            .article-content pre { padding: 16px; font-size: 0.8rem; border-radius: 10px; overflow-x: scroll; }
+            .article-content ul, .article-content ol { padding-left: 22px; }
+            .article-content li { font-size: 0.95rem; }
+            .back-link { font-size: 0.85rem; padding: 10px 16px; margin-bottom: 24px; }
+            footer { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">🤖 Inteligencia Artificial</span>
+            <h1 class="article-title">Uso de embeddings para búsqueda semántica en aplicaciones empresariales</h1>
+            <div class="article-meta">
+                <span>📅 Mayo 2026</span>
+                <span>⏱️ 12 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=1200&h=600&fit=crop" alt="Equipo analizando datos y construyendo búsqueda semántica con inteligencia artificial">
+    </div>
+
+    <div class="article-container">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+
+        <div class="article-content">
+            <h2>Introducción</h2>
+            <p>Cuando una aplicación necesita encontrar información por significado y no solo por coincidencia exacta de palabras, los embeddings se convierten en una pieza central. Gracias a ellos, una búsqueda puede entender que “acceso privilegiado”, “cuentas administrativas” y “privilegios elevados” están conceptualmente relacionados, aunque no compartan la misma redacción.</p>
+            <p>En entornos empresariales esto resulta especialmente útil para portales documentales, bases de conocimiento, asistentes internos, catálogos de incidentes y repositorios de procedimientos técnicos.</p>
+
+            <div class="note">
+                <strong>Idea clave:</strong> un embedding transforma texto en una representación numérica que conserva relaciones semánticas. Eso permite comparar intención y contexto, no solo palabras literales.
+            </div>
+
+            <h2>¿Qué es un embedding?</h2>
+            <p>Un embedding es un vector numérico generado por un modelo de IA a partir de texto, imágenes u otros datos. Ese vector ubica el contenido dentro de un espacio matemático donde elementos con significado similar quedan más cerca entre sí.</p>
+            <ul>
+                <li>Textos parecidos quedan próximos en el espacio vectorial</li>
+                <li>Consultas del usuario pueden compararse con documentos indexados</li>
+                <li>La similitud se mide con métricas como coseno o distancia euclidiana</li>
+            </ul>
+
+            <h2>¿Por qué la búsqueda tradicional se queda corta?</h2>
+            <p>Los motores basados solo en keywords funcionan bien cuando el usuario conoce exactamente el término correcto. El problema aparece cuando usa sinónimos, descripciones parciales o lenguaje natural.</p>
+            <table>
+                <tr><th>Búsqueda tradicional</th><th>Búsqueda semántica</th></tr>
+                <tr><td>Depende de coincidencias textuales</td><td>Entiende similitud conceptual</td></tr>
+                <tr><td>Falla con sinónimos y contexto</td><td>Tolera variaciones del lenguaje</td></tr>
+                <tr><td>Requiere taxonomías muy rígidas</td><td>Se adapta mejor a lenguaje natural</td></tr>
+                <tr><td>Menor valor en corpora extensos</td><td>Escala mejor para conocimiento disperso</td></tr>
+            </table>
+
+            <h2>Arquitectura básica de una solución semántica</h2>
+            <ol>
+                <li>Recolectar documentos desde fuentes confiables</li>
+                <li>Limpiar y dividir el contenido en fragmentos manejables</li>
+                <li>Generar embeddings para cada fragmento</li>
+                <li>Guardar vectores y metadatos en una base vectorial</li>
+                <li>Convertir la consulta del usuario en embedding</li>
+                <li>Recuperar los fragmentos más cercanos</li>
+                <li>Mostrar resultados o entregarlos a un flujo RAG</li>
+            </ol>
+
+            <h2>Casos de uso empresariales</h2>
+            <h3>1. Bases de conocimiento internas</h3>
+            <p>Equipos de soporte pueden encontrar procedimientos aun cuando describen el problema de forma distinta al documento original.</p>
+
+            <h3>2. Cumplimiento e ISO 27001</h3>
+            <p>Permite localizar políticas, controles, evidencias y procedimientos relacionados con un requisito sin depender de una nomenclatura exacta. Esto agiliza auditorías y revisiones internas.</p>
+
+            <h3>3. Seguridad informática</h3>
+            <p>Sirve para consultar playbooks de respuesta, hallazgos de vulnerabilidad, runbooks de hardening y registros históricos de incidentes con mayor precisión contextual.</p>
+
+            <h3>4. DevOps y operación</h3>
+            <p>Ayuda a recuperar documentación de pipelines, manifiestos, cambios de infraestructura y troubleshooting técnico usando lenguaje natural.</p>
+
+            <h2>Ejemplo práctico con Python</h2>
+            <p>Este ejemplo resume un flujo simple para indexar textos y ejecutar consultas semánticas.</p>
+            <pre><code>from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+modelo = SentenceTransformer("all-MiniLM-L6-v2")
+
+documentos = [
+    "Política de gestión de accesos privilegiados.",
+    "Procedimiento de respaldo y restauración para servidores Linux.",
+    "Guía de hardening para hosts Docker en producción."
+]
+
+vectores = modelo.encode(documentos)
+
+def buscar(query):
+    q_vector = modelo.encode([query])
+    scores = cosine_similarity(q_vector, vectores)[0]
+    orden = np.argsort(scores)[::-1]
+    return [(documentos[i], float(scores[i])) for i in orden]
+
+for resultado in buscar("controles para cuentas administrativas"):
+    print(resultado)</code></pre>
+
+            <h2>Qué metadatos conviene guardar</h2>
+            <p>Una solución empresarial no debe almacenar solo vectores. Los metadatos son esenciales para filtrado, trazabilidad y gobierno.</p>
+            <ul>
+                <li>Fuente del documento</li>
+                <li>Área responsable</li>
+                <li>Clasificación de la información</li>
+                <li>Fecha de vigencia o versión</li>
+                <li>Etiquetas por dominio: seguridad, ISO 27001, DevOps, RR. HH., etc.</li>
+            </ul>
+
+            <h2>Bases vectoriales recomendadas</h2>
+            <table>
+                <tr><th>Opción</th><th>Fortaleza</th><th>Escenario común</th></tr>
+                <tr><td>Qdrant</td><td>Buen equilibrio entre simplicidad y potencia</td><td>Aplicaciones internas y RAG corporativo</td></tr>
+                <tr><td>Weaviate</td><td>Capacidades avanzadas y ecosistema amplio</td><td>Plataformas semánticas con múltiples integraciones</td></tr>
+                <tr><td>pgvector</td><td>Integración natural con PostgreSQL</td><td>Equipos que ya operan sobre stack SQL</td></tr>
+                <tr><td>OpenSearch</td><td>Búsqueda híbrida y observabilidad</td><td>Entornos donde ya existe adopción del stack Elastic/OpenSearch</td></tr>
+            </table>
+
+            <h2>Buenas prácticas de implementación</h2>
+            <h3>Diseñar bien el chunking</h3>
+            <p>Si los fragmentos son demasiado grandes, el sistema mezcla ideas irrelevantes. Si son demasiado pequeños, pierde contexto. Conviene dividir por secciones lógicas con un solapamiento moderado.</p>
+
+            <h3>Usar búsqueda híbrida cuando haga falta</h3>
+            <p>Combinar embeddings con filtros por palabras clave, etiquetas o fechas mejora el resultado en dominios técnicos donde ciertos términos exactos siguen siendo críticos.</p>
+
+            <h3>Controlar acceso a la información</h3>
+            <p>No todos los usuarios deben poder consultar todos los vectores. La autorización debe respetar el mismo modelo de acceso que los documentos fuente.</p>
+
+            <h3>Reindexar ante cambios importantes</h3>
+            <p>Cuando cambian políticas, procedimientos o versiones documentales, la base vectorial también debe actualizarse para no devolver contenido obsoleto.</p>
+
+            <h2>Riesgos frecuentes</h2>
+            <table>
+                <tr><th>Riesgo</th><th>Mitigación</th></tr>
+                <tr><td>Resultados poco relevantes</td><td>Mejorar chunking, embeddings, reranking y metadatos</td></tr>
+                <tr><td>Documentos obsoletos</td><td>Versionado, vigencia y procesos de reindexación</td></tr>
+                <tr><td>Exposición de información sensible</td><td>ACL, clasificación y segmentación por rol</td></tr>
+                <tr><td>Costos innecesarios</td><td>Indexar solo contenido útil y medir valor por caso de uso</td></tr>
+            </table>
+
+            <h2>Relación con RAG</h2>
+            <p>La búsqueda semántica por embeddings es uno de los componentes más importantes de una arquitectura RAG. Primero recupera el contexto relevante; después, un modelo de lenguaje lo usa para responder. Sin recuperación de calidad, el RAG pierde precisión y confiabilidad.</p>
+
+            <h2>Conclusión</h2>
+            <p>Los embeddings permiten que las aplicaciones entiendan mejor la intención del usuario y encuentren conocimiento útil dentro de grandes volúmenes de información. En organizaciones que trabajan con seguridad, cumplimiento, documentación técnica y automatización, esta capacidad aporta eficiencia real.</p>
+            <p>Cuando se implementa con buen gobierno, control de acceso y fuentes confiables, la búsqueda semántica deja de ser una demostración de IA y se convierte en una herramienta operativa de alto valor.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Caprietoj.com · Seguridad Informática, ISO 27001, IA y DevOps</p>
+    </footer>
+</body>
+</html>
