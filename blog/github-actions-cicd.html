@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD con GitHub Actions: guía práctica para automatizar despliegues | Caprietoj.com</title>
+    <meta name="description" content="Aprende a diseñar pipelines CI/CD con GitHub Actions para compilar, probar, escanear y desplegar aplicaciones con seguridad y trazabilidad.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+        nav { background: #0f172a; padding: 0; position: fixed; width: 100%; top: 0; z-index: 1000; }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1rem; color: #3b82f6; letter-spacing: 1px; text-decoration: none; }
+        .nav-links a { color: rgba(255,255,255,0.75); text-decoration: none; margin-left: 24px; font-size: 0.9rem; font-weight: 500; transition: color 0.3s; }
+        .nav-links a:hover { color: white; }
+        .article-hero { padding: 140px 24px 60px; text-align: center; background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; }
+        .hero-inner { max-width: 860px; margin: 0 auto; }
+        .category-badge { display: inline-block; background: rgba(148, 163, 184, 0.18); color: #dbeafe; padding: 8px 20px; border-radius: 25px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(191, 219, 254, 0.35); }
+        .article-title { font-size: 2.8rem; font-weight: 700; line-height: 1.2; margin-bottom: 16px; color: white; }
+        .article-meta { display: flex; justify-content: center; gap: 24px; color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+        .featured-image { max-width: 1200px; margin: -30px auto 0; padding: 0 24px; position: relative; z-index: 10; }
+        .featured-image img { width: 100%; height: 450px; object-fit: cover; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .article-container { max-width: 850px; margin: 0 auto; padding: 40px 24px 80px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 12px 20px; background: white; border-radius: 10px; margin-bottom: 32px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s; }
+        .back-link:hover { background: #3b82f6; color: white; transform: translateX(-4px); }
+        .article-content { background: white; border-radius: 20px; padding: 48px; box-shadow: 0 4px 30px rgba(0,0,0,0.08); }
+        .article-content h2 { font-size: 1.8rem; font-weight: 700; color: #0f172a; margin: 48px 0 24px; padding-top: 24px; border-top: 2px solid #f1f5f9; }
+        .article-content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .article-content h3 { font-size: 1.3rem; font-weight: 600; color: #1e293b; margin: 32px 0 16px; }
+        .article-content p { font-size: 1.08rem; line-height: 1.85; color: #475569; margin-bottom: 20px; }
+        .article-content ul, .article-content ol { margin: 20px 0; padding-left: 28px; }
+        .article-content li { margin-bottom: 12px; line-height: 1.7; color: #475569; }
+        .article-content pre { background: #0d1117; color: #c9d1d9; padding: 24px; border-radius: 14px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; line-height: 1.7; margin: 24px 0; }
+        .article-content code { background: #f1f5f9; padding: 3px 8px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.88em; }
+        .article-content pre code { background: none; padding: 0; color: inherit; }
+        .article-content table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .article-content th { background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%); color: white; font-weight: 600; text-align: left; padding: 16px 20px; }
+        .article-content td { padding: 14px 20px; border-bottom: 1px solid #f1f5f9; color: #475569; vertical-align: top; }
+        .article-content tr:last-child td { border-bottom: none; }
+        .note { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 18px 20px; border-radius: 12px; margin: 24px 0; color: #1e3a8a; }
+        footer { background: #0f172a; color: white; text-align: center; padding: 32px; margin-top: 40px; }
+        @media (max-width: 768px) {
+            nav { position: relative; }
+            nav .nav-content { flex-wrap: wrap; padding: 12px 16px; }
+            nav .nav-links { display: none; }
+            .article-hero { padding: 80px 16px 40px; }
+            .article-title { font-size: 1.6rem; line-height: 1.3; }
+            .article-meta { flex-direction: column; gap: 8px; font-size: 0.85rem; }
+            .featured-image { margin: 0 auto; padding: 0 16px; }
+            .featured-image img { height: 200px; border-radius: 12px; }
+            .article-container { padding: 24px 16px 60px; }
+            .article-content { padding: 24px 20px; border-radius: 16px; }
+            .article-content h2 { font-size: 1.4rem; margin: 32px 0 16px; }
+            .article-content h3 { font-size: 1.15rem; margin: 24px 0 12px; }
+            .article-content p { font-size: 1rem; line-height: 1.7; }
+            .article-content pre { padding: 16px; font-size: 0.8rem; border-radius: 10px; overflow-x: scroll; }
+            .article-content ul, .article-content ol { padding-left: 22px; }
+            .article-content li { font-size: 0.95rem; }
+            .back-link { font-size: 0.85rem; padding: 10px 16px; margin-bottom: 24px; }
+            footer { padding: 24px 16px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <a href="../index.html" class="logo">CAPRIETOJ.COM</a>
+            <div class="nav-links">
+                <a href="../index.html#sobre-mi">Sobre Mí</a>
+                <a href="../index.html#experiencia">Experiencia</a>
+                <a href="../index.html#habilidades">Habilidades</a>
+                <a href="../index.html#educacion">Educación</a>
+                <a href="../index.html#blog">Blog</a>
+                <a href="../index.html#contacto">Contacto</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="article-hero">
+        <div class="hero-inner">
+            <span class="category-badge">⚙️ DevOps</span>
+            <h1 class="article-title">CI/CD con GitHub Actions: guía práctica para automatizar despliegues</h1>
+            <div class="article-meta">
+                <span>📅 Mayo 2026</span>
+                <span>⏱️ 13 min lectura</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="featured-image">
+        <img src="https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=1200&h=600&fit=crop" alt="Desarrollador revisando pipeline CI/CD y despliegues automatizados en GitHub Actions">
+    </div>
+
+    <div class="article-container">
+        <a href="../index.html#blog" class="back-link">← Volver al Blog</a>
+
+        <div class="article-content">
+            <h2>Introducción</h2>
+            <p>Automatizar integración y despliegue ya no es solo una mejora de productividad. En equipos modernos, un pipeline CI/CD bien diseñado reduce errores manuales, acelera entregas y mejora la trazabilidad de cambios.</p>
+            <p><strong>GitHub Actions</strong> se ha convertido en una opción muy práctica porque vive junto al código, permite ejecutar pruebas, escaneos de seguridad y despliegues desde flujos declarativos, y se integra con prácticamente cualquier stack.</p>
+
+            <div class="note">
+                <strong>Idea clave:</strong> un pipeline útil no solo compila. También valida calidad, protege secretos y controla cómo llega el cambio a producción.
+            </div>
+
+            <h2>¿Qué resuelve CI/CD en la práctica?</h2>
+            <p>Cuando no existe automatización, cada liberación depende de pasos manuales: construir artefactos, ejecutar pruebas, copiar archivos, reiniciar servicios y revisar resultados. Ese proceso introduce variabilidad y dificulta auditoría.</p>
+            <ul>
+                <li><strong>CI (Continuous Integration):</strong> integra cambios frecuentemente y valida que el código siga funcionando.</li>
+                <li><strong>CD (Continuous Delivery/Deployment):</strong> prepara o ejecuta despliegues repetibles hacia ambientes controlados.</li>
+                <li><strong>Trazabilidad:</strong> deja evidencia de qué commit, qué pruebas y qué aprobaciones acompañaron cada liberación.</li>
+            </ul>
+
+            <h2>Componentes básicos de un pipeline con GitHub Actions</h2>
+            <table>
+                <tr><th>Componente</th><th>Función</th></tr>
+                <tr><td>Workflow</td><td>Archivo YAML que define eventos, jobs y pasos.</td></tr>
+                <tr><td>Runner</td><td>Máquina que ejecuta el flujo: GitHub-hosted o self-hosted.</td></tr>
+                <tr><td>Jobs</td><td>Bloques de trabajo que pueden correr en paralelo o secuencia.</td></tr>
+                <tr><td>Actions</td><td>Pasos reutilizables para checkout, setup de runtime, build y despliegue.</td></tr>
+                <tr><td>Secrets y Variables</td><td>Almacenan credenciales y parámetros sin exponerlos en el repositorio.</td></tr>
+                <tr><td>Environments</td><td>Permiten aprobaciones, protección y segmentación por ambiente.</td></tr>
+            </table>
+
+            <h2>Diseño recomendado del flujo</h2>
+            <p>Un patrón seguro y mantenible suele separar el pipeline en etapas. Así se evita desplegar código que aún no ha pasado controles mínimos.</p>
+            <ol>
+                <li>Checkout del repositorio</li>
+                <li>Instalación de dependencias</li>
+                <li>Ejecución de linters y pruebas</li>
+                <li>Escaneo de vulnerabilidades o secretos</li>
+                <li>Construcción del artefacto o imagen</li>
+                <li>Publicación del artefacto</li>
+                <li>Despliegue a staging</li>
+                <li>Aprobación y despliegue a producción</li>
+            </ol>
+
+            <h2>Ejemplo de workflow</h2>
+            <p>El siguiente ejemplo muestra un flujo sencillo para una aplicación Node.js con pruebas y despliegue condicionado a la rama principal.</p>
+            <pre><code>name: ci-cd
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t myapp:${{ github.sha }} .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy
+        run: ./scripts/deploy.sh</code></pre>
+
+            <h2>Buenas prácticas de seguridad</h2>
+            <h3>1. Proteger secretos</h3>
+            <p>Las credenciales nunca deben vivir en el repositorio ni dentro del YAML. Usa <code>GitHub Secrets</code>, OpenID Connect cuando el proveedor lo permita y rotación periódica.</p>
+            <ul>
+                <li>Evita tokens permanentes si puedes usar credenciales temporales</li>
+                <li>Separa secretos por ambiente</li>
+                <li>Limita quién puede editar workflows críticos</li>
+            </ul>
+
+            <h3>2. Controlar permisos del workflow</h3>
+            <p>GitHub Actions permite definir permisos explícitos para el token del workflow. Aplicar privilegios mínimos reduce impacto ante abuso o error.</p>
+            <pre><code>permissions:
+  contents: read
+  packages: write
+  id-token: write</code></pre>
+
+            <h3>3. Revisar acciones de terceros</h3>
+            <p>No toda action pública es confiable. Conviene fijar versiones, preferir mantenedores reconocidos y evitar referencias flotantes cuando el flujo es sensible.</p>
+
+            <h2>Integración con DevSecOps</h2>
+            <p>Un pipeline moderno debe incluir controles de seguridad desde etapas tempranas. Esto evita que hallazgos críticos aparezcan cuando el cambio ya está listo para producción.</p>
+            <table>
+                <tr><th>Control</th><th>Objetivo</th></tr>
+                <tr><td>SAST</td><td>Detectar patrones inseguros en el código fuente.</td></tr>
+                <tr><td>Dependency scanning</td><td>Identificar librerías vulnerables.</td></tr>
+                <tr><td>Secret scanning</td><td>Evitar exposición de credenciales.</td></tr>
+                <tr><td>Container scanning</td><td>Revisar imágenes antes del despliegue.</td></tr>
+                <tr><td>Policy as code</td><td>Validar configuraciones e infraestructura.</td></tr>
+            </table>
+
+            <h2>Uso de ambientes y aprobaciones</h2>
+            <p>Los ambientes de GitHub permiten agregar una capa de gobernanza muy útil para producción. Puedes exigir revisores, limitar ramas autorizadas y separar variables según destino.</p>
+            <p>Esto es especialmente valioso cuando el pipeline soporta procesos auditables, cambios de alto impacto o requisitos alineados con ISO 27001 y segregación de funciones.</p>
+
+            <h2>Errores frecuentes</h2>
+            <h3>1. Hacer un pipeline monolítico</h3>
+            <p>Cuando todo vive en un único job, es más difícil aislar fallos, reutilizar etapas o escalar el flujo.</p>
+
+            <h3>2. Desplegar directo sin validaciones</h3>
+            <p>Compilar no equivale a estar listo para producción. Como mínimo deberían existir pruebas, control de dependencias y alguna verificación posterior al despliegue.</p>
+
+            <h3>3. Acumular secretos y excepciones</h3>
+            <p>Con el tiempo, muchos pipelines crecen sin higiene. Revisar secretos, permisos y acciones instaladas es parte del mantenimiento del sistema.</p>
+
+            <h3>4. No medir resultados</h3>
+            <p>Conviene observar duración de jobs, porcentaje de fallos, frecuencia de rollback y tiempo de recuperación para optimizar el proceso.</p>
+
+            <h2>Cómo llevarlo a producción con orden</h2>
+            <ul>
+                <li>Empieza con un flujo simple: pruebas + build + despliegue a staging</li>
+                <li>Agrega aprobaciones para producción</li>
+                <li>Versiona artefactos y registra cambios desplegados</li>
+                <li>Incluye rollback documentado o despliegues blue/green cuando aplique</li>
+                <li>Monitorea después de cada liberación</li>
+            </ul>
+
+            <h2>Conclusión</h2>
+            <p>GitHub Actions ofrece una base sólida para implementar CI/CD sin introducir una plataforma externa compleja desde el primer día. Bien configurado, permite acelerar entregas, mejorar calidad y fortalecer controles de seguridad.</p>
+            <p>La diferencia entre un pipeline decorativo y uno útil está en el diseño: pruebas confiables, privilegios mínimos, manejo correcto de secretos y una ruta clara entre desarrollo, staging y producción.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2026 Caprietoj.com · Seguridad Informática, ISO 27001, IA y DevOps</p>
+    </footer>
+</body>
+</html>
